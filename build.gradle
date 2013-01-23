@@ -1,0 +1,38 @@
+buildscript {
+        repositories {
+                mavenRepo name: 'clojars', url: 'http://clojars.org/repo'
+        }
+    dependencies {
+        classpath 'clojuresque:clojuresque:1.5.4'
+    }
+}
+
+group = 'org.ade'
+version = '0.1.0-SNAPSHOT'
+
+apply plugin: 'clojure'
+
+warnOnReflection = true
+aotCompile = true
+
+repositories {
+    mavenCentral()
+    clojarsRepo()
+}
+
+dependencies {
+    compile 'org.clojure:clojure:1.2.1'
+}
+
+task repl(type: JavaExec) {
+        group "Other"
+        description "Launches a Clojure REPL with the ${project} testCompile classpath"
+        classpath configurations.testCompile
+        classpath sourceSets.main.clojure.srcDirs
+        classpath sourceSets.test.clojure.srcDirs
+        main "clojure.main"
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.3'
+}
