@@ -1,4 +1,4 @@
-(ns nlp.core)
+(ns snld.core)
 
 (defn foo
   "I don't do a whole lot."
