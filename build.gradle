@@ -1,0 +1,37 @@
+buildscript {
+    repositories { mavenRepo name: 'clojars', url: 'http://clojars.org/repo' }
+    dependencies { classpath 'clojuresque:clojuresque:1.5.4' }
+}
+
+apply plugin: 'java'
+apply plugin: 'clojure'
+
+repositories {
+  mavenCentral()
+  clojarsRepo()
+  flatDir(dirs:'lib')
+  maven { url 'http://repository.ow2.org/nexus/content/groups/public' }
+}
+
+dependencies {
+  compile 'org.clojure:clojure:1.4.0'
+  compile 'incanter:incanter:1.4.1'
+  compile 'net.sourceforge.jtransforms:jtransforms:2.4.0'
+  compile 'edu.cmu.sphinx:sphinx4:1.0-beta6'
+}
+
+
+nreplPort = 9999
+configurations { nrepl }
+dependencies { nrepl 'org.clojure:tools.nrepl:0.2.1'}
+task nrepl(type: JavaExec) {
+        classpath configurations.nrepl.asPath,
+        project.sourceSets.main.clojure.srcDirs,
+        project.sourceSets.test.clojure.srcDirs,
+        sourceSets.main.runtimeClasspath
+        main = "clojure.main"
+        args '--eval', "(ns gradle-nrepl (:require [clojure.tools.nrepl.server :refer (start-server stop-server)]))",
+        '--eval', "(println \"Starting nrepl server on port $nreplPort\")",
+        '--eval', "(def server (start-server :port $nreplPort))"
+}
+

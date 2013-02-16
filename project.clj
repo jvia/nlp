@@ -3,7 +3,10 @@
   :url "http://example.com/FIXME"
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [incanter "1.4.1"]
-                 [net.sourceforge.jtransforms/jtransforms "2.4.0"]]
+                 [net.sourceforge.jtransforms/jtransforms "2.4.0"]
+                 [edu.cmu.sphinx/sphinx4 "1.0-beta6"]]
+  :repositories [["nexus" {:url "http://repository.ow2.org/nexus/content/groups/public"}]
+                 ["sonatype" {:url "http://oss.sonatype.org/content/repositories/releases"}]]
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]
   :resource-paths ["src/main/resources"]
