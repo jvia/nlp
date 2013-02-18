@@ -7,7 +7,7 @@
                  [edu.cmu.sphinx/sphinx4 "1.0-beta6"]]
   :repositories [["nexus" {:url "http://repository.ow2.org/nexus/content/groups/public"}]
                  ["sonatype" {:url "http://oss.sonatype.org/content/repositories/releases"}]]
-  :source-paths ["src/main/clojure"]
+  :source-paths ["src/main/clojure" "jars/*"]
   :test-paths ["src/test/clojure"]
   :resource-paths ["src/main/resources"]
   :javac-options ["-target" "1.7" "-source" "1.7" "-Xlint:-options"]
