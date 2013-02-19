@@ -29,7 +29,9 @@
            edu.cmu.sphinx.frontend.util.AudioFileDataSource
            edu.cmu.sphinx.frontend.DataBlocker
            java.net.URL
-           edu.cmu.sphinx.util.props.ConfigurationManager))
+           edu.cmu.sphinx.util.props.ConfigurationManager
+           edu.cmu.sphinx.frontend.DataStartSignal
+           edu.cmu.sphinx.frontend.DataEndSignal))
 
 ;; Define the processing pipeline without the data source
 (def xml "
@@ -69,12 +71,15 @@
               (MelFrequencyFilterBank. 130.0 6800.0 40)
               (DiscreteCosineTransform. 40 13)
               (BatchCMN.)
-              (DeltasFeatureExtractor.)]))
+              (DeltasFeatureExtractor. 3)]))
 
 (defn get-frontend []
   (spit "tmp" xml)
   (let [cm (ConfigurationManager. "tmp")]
     (.lookup cm "frontend")))
+
+(defn audio-source []
+  (AudioFileDataSource. 3200 nil))
 
 (def preemphasizer (Preemphasizer.))
 (def windower (RaisedCosineWindower.))
@@ -91,6 +96,29 @@
                           batch-cmn
                           feature-extractor]))
 
+
+(defn extract-features
+  "Pulls the features out of a DeltasFeaturesExtractor."
+  ([frontend]
+     (letfn [(next-data [x] (.getData x))
+             (prep-data [d]
+               (assert (zero? (mod (count (.getValues d)) 3))
+                       "Extracted features must be a multiple of 3.")
+               (let [features (partition 13 (.getValues d))]
+                 {:timestamp (.getCollectTime d)
+                  :sample-rate (.getSampleRate d)
+                  :features {:cepstrum (nth features 0)
+                             :delta (nth features 1)
+                             :ddelta (nth features 2)}}))]
+       (loop [data (.getData frontend)
+              accm nil]
+         (let [dtype (class data)]
+           (pprint dtype)
+           (cond (= DataStartSignal dtype) (recur (next-data frontend) nil)
+                 (= DataEndSignal dtype) accm
+                 :else
+                 (recur (next-data frontend)
+                        (conj accm (prep-data data)))))))))
 
 (defn add-data-source [pipeline source]
   (.setDataSource pipeline source))
@@ -173,3 +201,8 @@
 
    Should perform backoff to prevent any 0 probabilities to rare utterances."
   [corpora] nil)
+
+(defn available-methods [object]
+  (let [class (.getClass object)]
+    (for [method (.getDeclaredMethods class)]
+      (.toGenericString method))))
