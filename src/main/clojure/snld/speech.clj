@@ -9,10 +9,8 @@
 (ns ^{:doc "Convert acoustic signals to text."
       :author "Jeremiah Via"}
   snld.speech
-  (:use [incanter core charts stats])
-  ;; incanter.Matrix 	  incanter.Weibull 	incanter.charts 	incanter.core
-  ;; incanter.datasets 	incanter.infix 	incanter.internal 	incanter.io
-  ;; incanter.main 	  incanter.stats
+  (:use ;;[incanter core charts stats]
+   [snld sphinx])
   (:import [java.io File FileInputStream InputStream BufferedInputStream] 
            [javax.sound.sampled AudioFormat AudioInputStream AudioSystem]
            [edu.emory.mathcs.jtransforms.fft DoubleFFT_1D]
@@ -31,6 +29,89 @@
            java.net.URL
            edu.cmu.sphinx.util.props.ConfigurationManager))
 
+
+(defn make-pipline
+  "Makes a pipline using the default values."
+  []
+  (frontend
+   (data-blocker :block-size 10)
+   (preemphasizer :preemphasis-factor 0.97)
+   (raised-cosine-windower :window-size 25.625
+                           :window-shift 10.0
+                           :alpha 0.46)
+   (discrete-fourier-transform :fft-points -1
+                               :invert false)
+   (mel-frequency-filter-bank :num-filters 40
+                              :min-freq 130.0
+                              :max-freq 6800.0)
+   (discrete-cosine-transform :num-filters 40
+                              :cepstrum-len 13)
+   (batch-cmn)
+   (deltas-feature-extractor :window-size 3)))
+
+
+(defn add-data-source [pipeline source]
+  (.setDataSource pipeline source))
+
+(defn prep-data
+  "Tranforms data from the DeltaFeatureExtractor into a map."
+  [d]
+  (assert (zero? (mod (count (.getValues d)) 3))
+          "Extracted features must be a multiple of 3.")
+  (let [features (partition 13 (.getValues d))]
+    {:timestamp (.getCollectTime d)
+     :sample-rate (.getSampleRate d)
+     :features {:cepstrum (nth features 0)
+                :delta (nth features 1)
+                :ddelta (nth features 2)}}))
+
+(defn extract-features
+  "Pulls the features out of a DeltasFeaturesExtractor."
+  [frontend source]
+  (add-data-source frontend source)
+  (loop [val (data frontend) 
+         accm nil]
+    (cond (start? val) (recur (data frontend) nil)
+          (end? val) accm
+          :else (recur (data frontend)
+                       (conj accm (prep-data val))))))
+
+(defn file [url]
+  (File. url))
+
+(defn audio-file-feature-extractor
+  "Given a path to an audio file, extract all features from it for use
+  in mode building."
+  [path]
+  (let [frontend (make-pipline)
+        audio (audio-file-data-source :file path)]
+    (extract-features frontend audio)))
+
+
+(defn where-am-i? []  (.getCanonicalPath (File. ".")))
+
+(defn word-prob [W])
+(defn aw-prob
+  "The probability of the acoustic sequence given the "
+  [A W])
+
+
+;; Papers on HMM for computing a statistical representation of an
+;; acoustic signal
+;; - Baum, 1972
+;; - Baker, 1975
+;; - Jelinek, 1976
+
+(defn bigram
+  "Computes the bigram probabilities on given corpora.
+
+   Should perform backoff to prevent any 0 probabilities to rare utterances."
+  [corpora] nil)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; DEPRECATED
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Define the processing pipeline without the data source
 (def xml "
 <config>
@@ -59,55 +140,10 @@
 </config>
 ")
 
-(defn make-pipline
-  "Makes a pipline using the default values."
-  []
-  (FrontEnd. [(DataBlocker. 10)
-              (Preemphasizer. 0.97)
-              (RaisedCosineWindower. 0.46 25.625 10.0)
-              (DiscreteFourierTransform. 512 false)
-              (MelFrequencyFilterBank. 130.0 6800.0 40)
-              (DiscreteCosineTransform. 40 13)
-              (BatchCMN.)
-              (DeltasFeatureExtractor.)]))
-
 (defn get-frontend []
   (spit "tmp" xml)
   (let [cm (ConfigurationManager. "tmp")]
     (.lookup cm "frontend")))
-
-(def preemphasizer (Preemphasizer.))
-(def windower (RaisedCosineWindower.))
-(def dft (DiscreteFourierTransform. 512 false))
-(def filter-bank (MelFrequencyFilterBank.))
-(def dct (DiscreteCosineTransform.))
-(def batch-cmn (BatchCMN.))
-(def feature-extractor (DeltasFeatureExtractor.))
-(def pipeline (FrontEnd. [preemphasizer
-                          windower
-                          dft
-                          filter-bank
-                          dct
-                          batch-cmn
-                          feature-extractor]))
-
-
-(defn add-data-source [pipeline source]
-  (.setDataSource pipeline source))
-
-;;(def pipeline (FrontEnd.))
-
-
-
-(defn file [url]
-  (File. url))
-;; <component name="preemphasizer" type="edu.cmu.sphinx.frontend.filter.Preemphasizer"/>
-;; <component name="windower" type="edu.cmu.sphinx.frontend.window.RaisedCosineWindower"/>
-;; <component name="dft" type="edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform"/>
-;; <component name="melFilterBank" type="edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank"/>
-;; <component name="dct" type="edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform"/>
-;; <component name="batchCMN" type="edu.cmu.sphinx.frontend.feature.BatchCMN"/>
-;; <component name="featureExtractor" type="edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor"/>
 
 (defn amp
   "Computes the amplitude of the raw sound-stream.
@@ -152,24 +188,3 @@
 
 (defn plot-sound-file [file]
   (plot-stream (audio-stream-as-bytes file)))
-
-
-(defn where-am-i? []  (.getCanonicalPath (File. ".")))
-
-(defn word-prob [W])
-(defn aw-prob
-  "The probability of the acoustic sequence given the "
-  [A W])
-
-
-;; Papers on HMM for computing a statistical representation of an
-;; acoustic signal
-;; - Baum, 1972
-;; - Baker, 1975
-;; - Jelinek, 1976
-
-(defn bigram
-  "Computes the bigram probabilities on given corpora.
-
-   Should perform backoff to prevent any 0 probabilities to rare utterances."
-  [corpora] nil)
