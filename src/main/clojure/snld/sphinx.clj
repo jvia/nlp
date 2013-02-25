@@ -61,6 +61,9 @@
   (DeltasFeatureExtractor. window-size))
 
 (defn audio-file-data-source
+  "Creates an AudioFileDataSource. If given a file, it will attempt to
+  add it to the object, if possible. If this fails, it will just
+  return the base object."
   [& {:keys [bytes-per-read listeners file]
       :or {bytes-per-read 3200
            listeners nil
@@ -87,3 +90,8 @@
   "Get the data from a DataProcessor."
   [d]
   (.getData d))
+
+(defn add-data-source
+  "Add a data source to a pipeline."
+  [pipeline source]
+  (.setDataSource pipeline source))

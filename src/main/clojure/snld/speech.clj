@@ -1,3 +1,8 @@
+;; Papers on HMM for computing a statistical representation of an
+;; acoustic signal
+;; - Baum, 1972
+;; - Baker, 1975
+;; - Jelinek, 1976
 (ns ^{:doc "Convert acoustic signals to text."
       :author "Jeremiah Via"}
   snld.speech
@@ -19,8 +24,9 @@
            edu.cmu.sphinx.frontend.util.AudioFileDataSource
            edu.cmu.sphinx.frontend.DataBlocker
            java.net.URL
-           edu.cmu.sphinx.util.props.ConfigurationManager))
-
+           edu.cmu.sphinx.util.props.ConfigurationManager
+           edu.cmu.sphinx.frontend.DataStartSignal
+           edu.cmu.sphinx.frontend.DataEndSignal))
 
 (defn make-pipline
   "Makes a pipline using the default values."
@@ -40,10 +46,6 @@
                               :cepstrum-len 13)
    (batch-cmn)
    (deltas-feature-extractor :window-size 3)))
-
-
-(defn add-data-source [pipeline source]
-  (.setDataSource pipeline source))
 
 (defn prep-data
   "Tranforms data from the DeltaFeatureExtractor into a map."
@@ -83,96 +85,11 @@
     :delta '(5.394108 -0.192472 -0.7899849 0.1037459 -1.9239167E-4 -0.038117655 -0.506319 -0.286837 0.12566972 0.16874354 0.0024353901 0.49930543 -0.07753961),
     :ddelta '(-0.4581273 -0.49824384 0.17722619 0.09057022 0.16333143 -0.50345284 -0.065142944 0.4884249 0.26812062 0.20054768 0.13845621 -0.1357249 -0.28731254)}})
 
+
+;; Debug helpers
 (defn where-am-i? []  (.getCanonicalPath (File. ".")))
+(defn available-methods [object]
+  (let [class (.getClass object)]
+    (for [method (.getDeclaredMethods class)]
+      (.toGenericString method))))
 
-(defn word-prob [W])
-(defn aw-prob
-  "The probability of the acoustic sequence given the "
-  [A W])
-
-(defn bigram
-  "Computes the bigram probabilities on given corpora.
-
-   Should perform backoff to prevent any 0 probabilities to rare utterances."
-  [corpora] nil)
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; DEPRECATED
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Define the processing pipeline without the data source
-(def xml "
-<config>
-<component name=\"frontend\" type=\"edu.cmu.sphinx.frontend.FrontEnd\">
-     <propertylist name=\"pipeline\">
-        <!--<item>audioFileDataSource</item>-->
-        <item>dataBlocker</item>
-        <item>preemphasizer</item>
-        <item>windower</item>
-        <item>dft</item>
-        <item>melFilterBank</item>
-        <item>dct</item>
-        <item>batchCMN</item>
-        <item>featureExtractor</item>
-     </propertylist>
- </component>
- <component name=\"audioFileDataSource\" type=\"edu.cmu.sphinx.frontend.util.AudioFileDataSource\"/>
-<component name=\"dataBlocker\" type=\"edu.cmu.sphinx.frontend.DataBlocker\"/>
- <component name=\"preemphasizer\" type=\"edu.cmu.sphinx.frontend.filter.Preemphasizer\"/>
- <component name=\"windower\" type=\"edu.cmu.sphinx.frontend.window.RaisedCosineWindower\"/>
- <component name=\"dft\" type=\"edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform\"/>
- <component name=\"melFilterBank\" type=\"edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank\"/>
- <component name=\"dct\" type=\"edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform\"/>
- <component name=\"batchCMN\" type=\"edu.cmu.sphinx.frontend.feature.BatchCMN\"/>
- <component name=\"featureExtractor\" type=\"edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor\"/>
-</config>
-")
-
-(defn get-frontend []
-  (spit "tmp" xml)
-  (let [cm (ConfigurationManager. "tmp")]
-    (.lookup cm "frontend")))
-
-(defn amp
-  "Computes the amplitude of the raw sound-stream.
-
-   Based off of
-   http://stackoverflow.com/questions/4708613/graphing-the-pitch-frequency-of-a-sound"
-  [stream]
-  (for [i (range (count stream)) :when (even? i)]
-    (let [low  (int (aget stream i))
-          high (int (aget stream (inc i)))]
-      (+ (bit-shift-left high 8)
-         (bit-and low 0x00ff)))))
-
-(defn audio-stream-as-bytes [file]
-  (with-open [stream (AudioSystem/getAudioInputStream
-                      (BufferedInputStream. (FileInputStream. file)))]
-    (let [len (* (.getFrameLength stream)
-                 (.getFrameSize (.getFormat stream)))
-          bytes (byte-array len)]
-      (.read stream bytes)
-      bytes)))
-
-
-(defn fft [amp]
-  (let [fft (DoubleFFT_1D. (count amp))
-        arr (double-array amp)]
-    (.realForward fft arr)
-    (into [] arr)))
-
-(defn spectrogram [stream]
-  (map #(Math/pow (Math/abs %) 2)
-       (fft (amp stream))))
-
-(defn process [stream]
-  (fft (amp stream)))
-
-
-(defn plot-stream [stream]
-  (let [data (process stream)
-        len (range (count data))]
-    (view (line-chart len data)))) 
-
-(defn plot-sound-file [file]
-  (plot-stream (audio-stream-as-bytes file)))
