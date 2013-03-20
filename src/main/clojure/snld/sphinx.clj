@@ -1,4 +1,7 @@
-(ns snld.sphinx
+(ns
+    ^{:doc "Wrappers around Sphinx"
+      :author "Jeremiah Via"}
+  snld.sphinx
   (:import edu.cmu.sphinx.frontend.filter.Preemphasizer
            edu.cmu.sphinx.frontend.window.RaisedCosineWindower
            edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform
@@ -14,7 +17,8 @@
            java.net.URL
            edu.cmu.sphinx.util.props.ConfigurationManager
            edu.cmu.sphinx.frontend.DataStartSignal
-           edu.cmu.sphinx.frontend.DataEndSignal))
+           edu.cmu.sphinx.frontend.DataEndSignal
+           edu.cmu.sphinx.frontend.util.Microphone))
 
 (defn frontend
   [& dataprocessors]
@@ -95,3 +99,82 @@
   "Add a data source to a pipeline."
   [pipeline source]
   (.setDataSource pipeline source))
+
+(defn microphone
+  "Creates an instance of a Sphinx microphone for use in speech
+   reconigiton. If no arguments are supplied, it will attempt to do
+   the right thing.
+
+   - sample-rate: sample rate of the data
+
+   - bits-per-sample: number of bits per value.
+
+   - channels: number of channels.
+
+   - bigEndian: the endianness of the data
+
+   - signed: whether the data is signed.
+
+   - close-between-utterances: whether or not the microphone will
+     release the audio between utterances.  On certain systems (Linux
+     for one), closing and reopening the audio does not work too
+     well. The default is false for Linux systems, true for others
+
+   - msec-per-read: the number of milliseconds of audio data to read
+     each time from the underlying Java Sound audio device.
+
+   - keep-last-audio: whether to keep the audio data of an utterance
+     around until the next utterance is recorded.
+
+   - stereo-to-mono: how to convert stereo audio to mono. Currently,
+     the possible values are 'average', which averages the samples
+     from at each channel, or 'selectChannel', which chooses audio
+     only from that channel. If you choose 'selectChannel', you should
+     also specify which channel to use with the 'selectChannel'
+     property.
+
+   - selected-channel: the channel to use if the audio is stereo
+
+   - sected-mixer-index: the mixer to use.  The value can be
+     'default,' (which means let the AudioSystem decide), 'last,'
+     (which means select the last Mixer supported by the AudioSystem),
+     which appears to be what is often used for USB headsets, or an
+     integer value which represents the index of the Mixer.Info that
+     is returned by AudioSystem.getMixerInfo(). To get the list of
+     Mixer.Info objects, run the AudioTool application with a command
+     line argument of '-dumpMixers'.
+"
+  [& {:keys [sample-rate bits-per-sample channels
+             big-endian signed close-between-utterances
+             msec-per-read keep-last-audio stereo-to-mono
+             selected-channel selected-mixer buffer-size]
+      ;; All magic values are taken from Sphinx source
+      :or {sample-rate              1600
+           bits-per-sample          16
+           channels                 1
+           big-endian               false
+           signed                   true
+           close-between-utterances true
+           msec-per-read            10
+           keep-last-audio          false
+           stereo-to-mono           "average"
+           selected-channel         0
+           selected-mixer           "default"
+           buffer-size              6400}}]
+  ;; A constructor only a mother could love
+  (Microphone. sample-rate bits-per-sample channels
+               big-endian signed close-between-utterances
+               msec-per-read keep-last-audio stereo-to-mono
+               selected-channel selected-mixer buffer-size))
+
+(defn start-recording
+  "Initialize and start recording data from the microphone."
+  [mic]
+  (.initialize mic)
+  (.startRecording mic))
+
+(defn stop-recording
+  "Stop recording the microphone and clear its data cache."
+  [mic]
+  (.stopRecording mic)
+  (.clear mic))

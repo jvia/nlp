@@ -1,3 +1,24 @@
+;;; Assignment 1
+;; Write a speech recognizer that can recognize simple words.  Feel
+;; free to be as creative as you would like to be in devising the
+;; recognizer (there are no requirements for a particular algorithm).
+;; You are allowed to use whatever supporting software you'd like to
+;; use short of using an existing speech recognizer (e.g., here is FFT
+;; software in C that reads an audio stream from the mic).  Test your
+;; recognizer on the three color words: "red", "green", and "white".
+;; You might want to record your own words as well.  Finally, think of
+;; ways of biasing your recognizers so that it is better at
+;; distinguishing words with a bias than words without (e.g., you
+;; could bias it towards "on" so that it will recognize "on" more
+;; likely compared to "one").
+
+
+
+;; http://cmusphinx.sourceforge.net/wiki/tutorialsphinx4
+;; 
+;; Recreate in clojure & then replace the HMM
+;;
+
 ;; Papers on HMM for computing a statistical representation of an
 ;; acoustic signal
 ;; - Baum, 1972
@@ -6,27 +27,15 @@
 (ns ^{:doc "Convert acoustic signals to text."
       :author "Jeremiah Via"}
   snld.speech
-  (:use ;;[incanter core charts stats]
-   [snld sphinx])
-  (:import [java.io File FileInputStream InputStream BufferedInputStream] 
-           [javax.sound.sampled AudioFormat AudioInputStream AudioSystem]
-           [edu.emory.mathcs.jtransforms.fft DoubleFFT_1D]
-           edu.cmu.sphinx.frontend.filter.Preemphasizer
-           edu.cmu.sphinx.frontend.window.RaisedCosineWindower
-           edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform
-           edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank
-           edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform
-           edu.cmu.sphinx.frontend.feature.BatchCMN
-           edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor
-           edu.cmu.sphinx.frontend.FrontEnd
-           edu.cmu.sphinx.frontend.DataProcessor
-           edu.cmu.sphinx.frontend.util.Microphone
-           edu.cmu.sphinx.frontend.util.AudioFileDataSource
-           edu.cmu.sphinx.frontend.DataBlocker
-           java.net.URL
-           edu.cmu.sphinx.util.props.ConfigurationManager
-           edu.cmu.sphinx.frontend.DataStartSignal
-           edu.cmu.sphinx.frontend.DataEndSignal))
+  (:use [snld sphinx])
+  (:import [java.io File FileInputStream InputStream BufferedInputStream]))
+
+;;; Some vars to hold the files
+(def red2 "src/main/resources/red2.wav")
+(def on3 "src/main/resources/on3.wav")
+(def green2 "src/main/resources/green2.wav")
+(def one1 "src/main/resources/one1.wav")
+(def white1 "src/main/resources/white2.wav")
 
 (defn make-pipline
   "Makes a pipline using the default values."
