@@ -9,17 +9,30 @@
         snld.sphinx snld.speech))
 
 
+(def absolute-beam-width 5000)
+(def relative-beam-width 1e-120)
 
 (def root "src/main/resources/")
 
+(defn init-recognzer [frontend]
+  (let [scorer (threaded-acoustic-scorer frontend)
+        pruner (simple-pruner)
+        linguist nil
+        logmath (log-math)
+        alf (partition-active-list-factory absolute-beam-width relative-beam-width logmath)
+        search (bfs-manager logmath linguist pruner scorer alf false 0.0 0 false)
+        decoder (decoder search false false [] 10000)
+        ;;monitors [(best-path-accuracy-tracker re-implementation)]
+        reconizer (recognizer decoder [])]))
+
 (defn -main []
-  (let [mic (microphone)
+  (let [audio-source (microphone)
         frontend (make-pipline)]
     (log/debug "Initializing microphone")
-    (add-data-source frontend mic)
-    (start-recording mic)
+    (add-data-source frontend audio-source)
+    (start-recording audio-source)
     (loop []
-      (log/info (data mic))
+      (log/info (data audio-source))
       (recur))
     #_(loop [val (data frontend)]
       (cond (start? val) (do
@@ -29,3 +42,5 @@
             :else (do
                     (log/info (.toString val))
                     (recur (data frontend)))))))
+
+  

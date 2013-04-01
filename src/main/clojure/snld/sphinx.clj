@@ -2,23 +2,33 @@
     ^{:doc "Wrappers around Sphinx"
       :author "Jeremiah Via"}
   snld.sphinx
-  (:import edu.cmu.sphinx.frontend.filter.Preemphasizer
-           edu.cmu.sphinx.frontend.window.RaisedCosineWindower
-           edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform
-           edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank
-           edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform
+  (:import java.net.URL
+           edu.cmu.sphinx.decoder.Decoder
+           edu.cmu.sphinx.decoder.search.PartitionActiveListFactory
+           edu.cmu.sphinx.decoder.search.SimpleBreadthFirstSearchManager
+           edu.cmu.sphinx.decoder.scorer.ThreadedAcousticScorer
+           edu.cmu.sphinx.decoder.pruner.SimplePruner
+           edu.cmu.sphinx.frontend.DataBlocker
+           edu.cmu.sphinx.frontend.DataEndSignal
+           edu.cmu.sphinx.frontend.DataProcessor
+           edu.cmu.sphinx.frontend.DataStartSignal
+           edu.cmu.sphinx.frontend.FrontEnd
            edu.cmu.sphinx.frontend.feature.BatchCMN
            edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor
-           edu.cmu.sphinx.frontend.FrontEnd
-           edu.cmu.sphinx.frontend.DataProcessor
-           edu.cmu.sphinx.frontend.util.Microphone
+           edu.cmu.sphinx.frontend.filter.Preemphasizer
+           edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank
+           edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform
+           edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform
            edu.cmu.sphinx.frontend.util.AudioFileDataSource
-           edu.cmu.sphinx.frontend.DataBlocker
-           java.net.URL
-           edu.cmu.sphinx.util.props.ConfigurationManager
-           edu.cmu.sphinx.frontend.DataStartSignal
-           edu.cmu.sphinx.frontend.DataEndSignal
-           edu.cmu.sphinx.frontend.util.Microphone))
+           edu.cmu.sphinx.frontend.util.Microphone
+           edu.cmu.sphinx.frontend.util.Microphone
+           edu.cmu.sphinx.frontend.window.RaisedCosineWindower
+           edu.cmu.sphinx.instrumentation.MemoryTracker
+           edu.cmu.sphinx.instrumentation.BestPathAccuracyTracker
+           edu.cmu.sphinx.instrumentation.SpeedTracker
+           edu.cmu.sphinx.recognizer.Recognizer
+           edu.cmu.sphinx.util.LogMath
+           edu.cmu.sphinx.util.props.ConfigurationManager))
 
 (defn frontend
   [& dataprocessors]
@@ -178,3 +188,60 @@
   [mic]
   (.stopRecording mic)
   (.clear mic))
+
+
+(defn threaded-acoustic-scorer
+  [frontend & {:keys [score-normalizer min-scoreable num-threads cpu-relative thread-priority]
+               :or [score-normalizer nil
+                    min-scoreable 10
+                    num-threads 0
+                    cpu-relative true
+                    prior Thread.NORM_PRIORITY]}]
+  (ThreadedAcousticScorer. frontend score-normalizer min-scoreable
+                           cpu-relative num-threads thread-priority))
+
+(defn simple-pruner []
+  (SimplePruner.))
+
+
+(defn log-math [& {:keys [log-base use-add-table]
+                   :or {log-base 1.0001 use-add-table true}}]
+  (LogMath. log-base use-add-table))
+
+(defn partition-active-list-factory [absolute-beam-width relative-beam-width log-math]
+  (PartitionActiveListFactory. absolute-beam-width
+                               relative-beam-width
+                               log-math))
+
+
+(defn bfs-manager [log-math linguist pruner scorer active-list-factory
+                   show-token-count relative-beam-width
+                   grow-skip-interval word-entry-pruning]
+  (SimpleBreadthFirstSearchManager. log-math linguist pruner scorer active-list-factory
+                                    show-token-count relative-beam-width
+                                    grow-skip-interval word-entry-pruning))
+
+(defn decoder [search-manager fire-non-final-results
+               auto-allocate result-listeners feature-block-size]
+  (Decoder. search-manager fire-non-final-results auto-allocate
+            result-listeners feature-block-size))
+
+(defn recognizer [decoder monitors]
+  (Recognizer. decoder monitors))
+
+(defn memory-tracker [recognizer & {:keys [show-summary show-details]
+                                    :or {show-summary true
+                                         show-details true}}]
+  (MemoryTracker. recognizer show-summary show-details))
+
+(defn best-path-accuracy-tracker
+  [recognizer & {:keys [summary details results aligned-results raw-results full-path]
+                 :or {summary false details false
+                      results false aligned-results false
+                      raw-results false full-path false}}]
+  (BestPathAccuracyTracker. recognizer summary details results aligned-results raw-results full-path))
+
+(defn speed-tracker [recognizer frontend & {:keys [summary details response-time timers]
+                                            :or {sumarry true details false
+                                                 response-time false timers false}}]
+  (SpeedTracker. recognizer frontend summary details response-time timers))

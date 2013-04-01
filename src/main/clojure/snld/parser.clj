@@ -15,3 +15,8 @@
 
 ;; Implement the CCG parser from class
 ;; http://www.aclweb.org/aclwiki/index.php?title=Combinatory_Categorial_Grammar
+
+(defn parse [string])
+(defn shift [])
+(defn reduce [])
+
