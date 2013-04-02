@@ -256,7 +256,7 @@
   :iter 10
   :trans noA
   :mixture noMM
-  :prob (take 7 (repeat 1/7))})
+  :prob (vec (take 7 (repeat 1/7)))})
 
 
 
@@ -288,28 +288,92 @@
 (defn init-viterbi
   "Initialize the data structure for the Viterbi algorithm."
   [obs t hmm]
-  {:t t :states
+  [{:t t :states
    (into {}
          (for [state (range (:num_states hmm))]
            {(keyword (str state))
-            {:prev nil
-             :prob (* (nth (:prob hmm) state)
-                      (gaussian-mixture obs (nth (:mixture hmm) state)))}}))})
+            {:prev 0
+             :prob (+ (log (nth (:prob hmm) state))
+                      (log (gaussian-mixture obs (nth (:mixture hmm) state))))}}))}])
 
-(defn most-likely-path [db])
+(defn most-likely-path [db]
+  {:path [] :prob 0.5})
 
-(defn iterate-viterbi [obs t hmm]
-  (let [prev (keyword (str (dec t)))]))
+(defn best-so-far
+  "Given a state and a time, find the best previous state and its probability and co"
+  [state t hmm db]
+  #_{:prev (dec t) :prob 0.5}
+  (let [prev-time (first (filter #(= (:t %) (dec t)) db))
+        prev-states (:states prev-time)]
+    #_(pprint prev-time)
+    (loop [keys (keys prev-states)
+           best-state 0
+           best-prob  Double/MIN_VALUE]
+      (if (empty? keys)
+        {:prev best-state :prob best-prob}
+        (let [k (first keys)
+              eys (rest keys)
+              cur-state k
+              cur-prob  (:prob (get prev-states k))]
+          (if (> cur-prob best-prob)
+            (recur eys cur-state cur-prob)
+            (recur eys best-state best-prob)))))))
+
+(defn iterate-viterbi [obs t hmm db]
+  (if (zero? t)
+    (init-viterbi obs t hmm)
+    (let [prev (keyword (str (dec t)))]
+      (conj db
+            {:t t :states
+             (into {} (for [state (range (:num_states hmm))]
+                        (let [stkwd (keyword (str state))
+                              best (best-so-far state t hmm db)]
+                          {stkwd
+                           {:prev (:prev best)
+                            :prob (+ (log (:prob best))
+                                     (.get (:trans hmm) (:prev best) state)
+                                     (log (gaussian-mixture obs (nth (:mixture hmm) state))))}})))}))))
 
 (defn viterbi [input hmm]
   (loop [time 0 obs input db nil]
-    (cond (zero? time) (recur (inc time) (rest obs) (init-viterbi (first obs) time hmm))
-          (empty? input) db #_(most-likely-path db)
-          :else db #_(recur (inc time) (rest obs) (iterate-viterbi (first obs) time hmm)))))
+    (if (empty? obs) db
+        (recur (inc time) (rest obs) (iterate-viterbi (first obs) time hmm db)))))
+
+
+
+
+
+(defn vit-path-init [states]
+  (vec (for [state (range states)]
+         [state])))
+
+(defn vit-init
+  "Initialize the viterbi"
+  [obs states start-prob emit-prob]
+  (vec (map (fn [state init-prob gmm] (* init-prob (gaussian-mixture obs gmm)))
+            (range states) start-prob emit-prob)))
+
+(defn vit-max [t obs states V trans-prob emit-prob]
+  (for [state (range states)
+        prev  (range states)]
+    (* (get V t prev)
+       (.get trans-prob prev state)
+       (gaussian-mixture obs (get emit-prob state)))))
+
+(defn vit [in hmm]
+  (let [states (:num_states hmm)
+        start-prob (:prob hmm)
+        trans-prob (:trans hmm)
+        emit-prob  (:mixture hmm)]
+    (loop [obs in t  0
+           V [(vit-init (first obs) states start-prob emit-prob)]
+           path (vit-path-init states)]
+      (if (empty? obs) path
+          (let [[V' path'] (vit-max t (first obs ) states V trans-prob emit-prob)]
+            (recur (rest obs) (inc t) V' path'))))))
 
 ;;{:t 0 :states {:1 {:prev nil :prob 1/7}}}
-;;{:t 1 :states {:1 {:prev 1 :prob 0.5} :2 {:prev 1 :prob 0.5} :3 :4 :5 :6 :7}}
-
+;;{:t 1 :states {:1 {:prev 2 :prob 0.5} :2 {:prev 1 :prob 0.5} :3 :4 :5 :6 :7}}
 
 (def input1
   [[-2.0056 -0.5617 -0.1262 -0.2387 -0.3990 0.2257 0.5405 -0.1414 0.0202 0.0240 0.0511 0.2644 0.0624 -0.1833]
