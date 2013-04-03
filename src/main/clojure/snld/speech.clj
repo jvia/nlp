@@ -226,20 +226,23 @@
 (defn max-prev
   "Given a Viterbi table and a timestamp, find the best previous state."
   [db t]
-  (let [prev-key (num->key
-                  (:prev (get (get db (num->key t))
-                              (:best (max-cur db t)))))]
-    (:prev (get (get db
-                     (num->key (dec t))) prev-key))))
+  (let [best-cur (:best (max-cur db t))]
+    (:prev (get (get db (num->key t)) best-cur))))
 
-(defn most-likely-path [db]
-  (let [final-t (apply max (map key->num (keys db)))]
-    (loop [t final-t path nil prob 0]
+(defn most-likely-path 
+  "Given a Viterbi table, backtrack through the table to recover the
+   most likely path."
+  [db]
+  (let [final-t (apply max (map key->num (keys db)))
+        {end :best endp :prob} (max-cur db final-t)]
+    (loop [t final-t
+           path (list (key->num end))
+           prob endp]
       (println path "..." prob)
       (if (zero? t) {:path path :prob prob}
-          (let [{prev-state :prev prev-prob :prob} (max-prev db t)]
-            (println ">> " prev-state "..." prev-prob)
-            (recur (dec t) (conj path prev-state) (* prob prev-prob)))))))
+          (recur (dec t)
+                 (cons (max-prev db t) path)
+                 (* prob (:prob (max-cur db t))))))))
 
 (defn best-so-far
   "Given a state and a time, find the best previous state and its probability and co"
@@ -759,13 +762,13 @@
 (def example-solution
   ^{:doc "In the form of {:# {:# {:prev # :prob #]}
                          {timestamp {state {previous-best previous-prob}}}"}
-  {:0 {:0 {:prev 0 :prob 1}
-       :1 {:prev 1 :prob 1}
-       :2 {:prev 2 :prob 1}
-       :3 {:prev 3 :prob 1}
-       :4 {:prev 4 :prob 1}
-       :5 {:prev 5 :prob 1}
-       :6 {:prev 6 :prob 1}}
+  {:0 {:0 {:prev nil :prob 1}
+       :1 {:prev nil :prob 1}
+       :2 {:prev nil :prob 1}
+       :3 {:prev nil :prob 1}
+       :4 {:prev nil :prob 1}
+       :5 {:prev nil :prob 1}
+       :6 {:prev nil :prob 1}}
    :1 {:0 {:prev 0 :prob 1}
        :1 {:prev 0 :prob 1}
        :2 {:prev 0 :prob 1}
