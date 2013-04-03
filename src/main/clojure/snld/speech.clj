@@ -99,6 +99,31 @@
 
 
 
+(def example-solution
+  ^{:doc "In the form of {:# {:# {:prev # :prob #]}
+                         {timestamp {state {previous-best previous-prob}}}"}
+  {:0 {:0 {:prev 0 :prob 1}
+       :1 {:prev 1 :prob 1}
+       :2 {:prev 2 :prob 1}
+       :3 {:prev 3 :prob 1}
+       :4 {:prev 4 :prob 1}
+       :5 {:prev 5 :prob 1}
+       :6 {:prev 6 :prob 1}}
+   :1 {:0 {:prev 0 :prob 1}
+       :1 {:prev 0 :prob 1}
+       :2 {:prev 0 :prob 1}
+       :3 {:prev 0 :prob 1}
+       :4 {:prev 0 :prob 1}
+       :5 {:prev 0 :prob 1}
+       :6 {:prev 0 :prob 1}}
+   :2 {:0 {:prev 1 :prob 0.5}
+       :1 {:prev 1 :prob 0.2}
+       :2 {:prev 1 :prob 0.3}
+       :3 {:prev 3 :prob 0.6}
+       :4 {:prev 4 :prob 0.2}
+       :5 {:prev 2 :prob 0.001}
+       :6 {:prev 1 :prob 0.1}}})
+
 
 
 
@@ -259,8 +284,6 @@
   :prob (vec (take 7 (repeat 1/7)))})
 
 
-
-
 (defn gaussian
   "Calcuate the probability of an observation given the parameters of
   a multi-variate Gaussian. "
@@ -295,6 +318,7 @@
             {:prev 0
              :prob (+ (log (nth (:prob hmm) state))
                       (log (gaussian-mixture obs (nth (:mixture hmm) state))))}}))}])
+
 
 (defn most-likely-path [db]
   {:path [] :prob 0.5})
