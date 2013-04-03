@@ -213,10 +213,8 @@
 (defn max-cur
   "Given a Viterbi table and a timestamp, find the most likely state."
   [db t]
-  (let [key (num->key t)
-        entry (get db key)]
+  (let [key (num->key t) entry (get db key)]
     (loop [states (keys entry) best-state -1 best-prob -1]
-      (print states "..." best-state "..." best-prob)
       (if (empty? states) {:best best-state :prob best-prob}
           (let [cur-state (first states)
                 cur-prob  (:prob (get entry cur-state))]
@@ -227,16 +225,12 @@
 
 (defn max-prev
   "Given a Viterbi table and a timestamp, find the best previous state."
-  [db t] 
-  (let [key (keyword (str t))
-        entry (get db key)]
-    (loop [states (keys entry) best-state -1 best-prob -1]
-      (if (empty? states) {:prev best-state :prob best-prob}
-          (let [cur-state (:prev (get entry (first states)))
-                cur-prob  (:prob (get entry (first states)))]
-            (if (> cur-prob best-prob)
-              (recur (rest states) cur-state cur-prob)
-              (recur (rest states) best-state best-prob)))))))
+  [db t]
+  (let [prev-key (num->key
+                  (:prev (get (get db (num->key t))
+                              (:best (max-cur db t)))))]
+    (:prev (get (get db
+                     (num->key (dec t))) prev-key))))
 
 (defn most-likely-path [db]
   (let [final-t (apply max (map key->num (keys db)))]
