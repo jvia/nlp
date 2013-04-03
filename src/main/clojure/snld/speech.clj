@@ -210,11 +210,20 @@
 (defn num->key [num]
   (keyword (str num)))
 
-#_(defn max-cur
-  "given a Viterbi table and a timestamp, find the most likely state."
+(defn max-cur
+  "Given a Viterbi table and a timestamp, find the most likely state."
   [db t]
   (let [key (num->key t)
-        entry ()]))
+        entry (get db key)]
+    (loop [states (keys entry) best-state -1 best-prob -1]
+      (print states "..." best-state "..." best-prob)
+      (if (empty? states) {:best best-state :prob best-prob}
+          (let [cur-state (first states)
+                cur-prob  (:prob (get entry cur-state))]
+            (if (> cur-prob best-prob)
+              (recur (rest states) cur-state cur-prob)
+              (recur (rest states) best-state best-prob)))))))
+
 
 (defn max-prev
   "Given a Viterbi table and a timestamp, find the best previous state."
