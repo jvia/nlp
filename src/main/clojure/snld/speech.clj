@@ -142,9 +142,6 @@
 ;;
 ;; - for VQ, can use euclidean distance to determine distance between two feature vectors
 ;; - GMM will be a set of pdf-normals.
-
-
-
 (defn gmm
   "Calculate the probability of x given a Gaussian mixture model"
   ;; TODO: make multidimensional
@@ -153,19 +150,12 @@
             (* weight (pdf-normal x mean sd)))]
     (reduce + (map component mm))))
 
-
-
 (def mixture [{:weight 0.5 :mean 2 :sd 0.5}
               {:weight 0.5 :mean 4 :sd 1}])
 
 ;; will need a hmm for each word (> 3 per word)
 
 ;; will need an hmm for each phoneme (with 3 states, not including null states)
-
-
-
-
-
 
 
 (defn gaussian
@@ -229,96 +219,67 @@
   (let [best-cur (:best (max-cur db t))]
     (:prev (get (get db (num->key t)) best-cur))))
 
+(defn max-key [db]
+  (apply max (map key->num (keys db))))
+
 (defn most-likely-path 
   "Given a Viterbi table, backtrack through the table to recover the
    most likely path."
   [db]
-  (let [final-t (apply max (map key->num (keys db)))
+  (let [final-t (max-key db)
         {end :best endp :prob} (max-cur db final-t)]
-    (loop [t final-t
-           path (list (key->num end))
-           prob endp]
-      (println path "..." prob)
-      (if (zero? t) {:path path :prob prob}
-          (recur (dec t)
-                 (cons (max-prev db t) path)
-                 (* prob (:prob (max-cur db t))))))))
+    (loop [t final-t path
+           (list (key->num end))]
+      (if (zero? t) {:path path :prob endp}
+          (recur (dec t) (cons (max-prev db t) path))))))
 
-(defn best-so-far
-  "Given a state and a time, find the best previous state and its probability and co"
-  [state t hmm db]
-  #_{:prev (dec t) :prob 0.5}
-  (let [prev-time (first (filter #(= (:t %) (dec t)) db))
-        prev-states (:states prev-time)]
-    #_(pprint prev-time)
-    (loop [keys (keys prev-states)
-           best-state 0
-           best-prob  Double/MIN_VALUE]
-      (if (empty? keys)
-        {:prev best-state :prob best-prob}
-        (let [k (first keys)
-              eys (rest keys)
-              cur-state k
-              cur-prob  (:prob (get prev-states k))]
-          (if (> cur-prob best-prob)
-            (recur eys cur-state cur-prob)
-            (recur eys best-state best-prob)))))))
+(defn transition-prob [hmm prev cur]
+  (.get (:trans hmm) prev cur))
 
-(defn iterate-viterbi [obs t hmm db]
-  (if (zero? t)
-    (init-viterbi obs t hmm)
-    (let [prev (keyword (str (dec t)))]
-      (conj db
-            {:t t :states
-             (into {} (for [state (range (:num_states hmm))]
-                        (let [stkwd (keyword (str state))
-                              best (best-so-far state t hmm db)]
-                          {stkwd
-                           {:prev (:prev best)
-                            :prob (+ (log (:prob best))
-                                     (.get (:trans hmm) (:prev best) state)
-                                     (log (gaussian-mixture obs (nth (:mixture hmm) state))))}})))}))))
+(defn emitting-prob [hmm obs state]
+  (gaussian-mixture obs (get (:mixture hmm) state)))
 
-(defn viterbi [input hmm]
-  (loop [time 0 obs input db nil]
-    (if (empty? obs) db
-        (recur (inc time) (rest obs) (iterate-viterbi (first obs) time hmm db)))))
+(defn maximum-prob
+  "Given a state, a previous sets of states, an observation and the
+   hidden markov model, determine the best transtion to this state and
+   its probability."
+  [state obs prev-states hmm]
+  (letfn [(calc-prob [prob prev]
+            (+ prob
+               (transition-prob hmm prev state)
+               (emitting-prob obs gmm state)))]
+    (let [candidates (zipmap (keys prev-states)
+                             (map (fn [s] (calc-prob (:prob (val s)) (key->num (key s))))
+                                  prev-states))]
+      (println candidates)
+      ;; Get the max state-prob pair
+      (reduce #(if (> (val %1) (val %2)) %1 %2)
+              ;; update all probs of going into this state
+              candidates))))
 
+(defn update-table
+  "Update the Viteri table using the given observation and hidden
+   markov model."
+  [db obs hmm]
+  (let [cur-t  (max-key db)
+        next-t (inc cur-t)
+        prev-states (get db (num->key cur-t))
+        states (range (:num_states hmm))]
+    (assoc db
+      (num->key next-t)
+      (zipmap (map num->key states)
+              (map #(maximum-prob % obs prev-states hmm) states)))))
 
-
-
-
-(defn vit-path-init [states]
-  (vec (for [state (range states)]
-         [state])))
-
-(defn vit-init
-  "Initialize the viterbi"
-  [obs states start-prob emit-prob]
-  (vec (map (fn [state init-prob gmm] (* init-prob (gaussian-mixture obs gmm)))
-            (range states) start-prob emit-prob)))
-
-(defn vit-max [t obs states V trans-prob emit-prob]
-  (for [state (range states)
-        prev  (range states)]
-    (* (get V t prev)
-       (.get trans-prob prev state)
-       (gaussian-mixture obs (get emit-prob state)))))
-
-(defn vit [in hmm]
-  (let [states (:num_states hmm)
-        start-prob (:prob hmm)
-        trans-prob (:trans hmm)
-        emit-prob  (:mixture hmm)]
-    (loop [obs in t  0
-           V [(vit-init (first obs) states start-prob emit-prob)]
-           path (vit-path-init states)]
-      (if (empty? obs) path
-          (let [[V' path'] (vit-max t (first obs ) states V trans-prob emit-prob)]
-            (recur (rest obs) (inc t) V' path'))))))
-
-;;{:t 0 :states {:1 {:prev nil :prob 1/7}}}
-;;{:t 1 :states {:1 {:prev 2 :prob 0.5} :2 {:prev 1 :prob 0.5} :3 :4 :5 :6 :7}}
+(defn viterbi
+  "Given a set of observations and a hiddern markov model, find the
+   Viterbi path through the hidden markov model which best explains
+   the observation sequence."
+  [observations hmm db]
+  (if (empty? observations)
+    (most-likely-path db)
+    (let [obs  (first observations)
+          next (rest observations)]
+      (recur next hmm (update-table db obs hmm)))))
 
 (def input1
   [[-2.0056 -0.5617 -0.1262 -0.2387 -0.3990 0.2257 0.5405 -0.1414 0.0202 0.0240 0.0511 0.2644 0.0624 -0.1833]
@@ -762,13 +723,13 @@
 (def example-solution
   ^{:doc "In the form of {:# {:# {:prev # :prob #]}
                          {timestamp {state {previous-best previous-prob}}}"}
-  {:0 {:0 {:prev nil :prob 1}
-       :1 {:prev nil :prob 1}
-       :2 {:prev nil :prob 1}
-       :3 {:prev nil :prob 1}
-       :4 {:prev nil :prob 1}
-       :5 {:prev nil :prob 1}
-       :6 {:prev nil :prob 1}}
+  {:0 {:0 {:prev nil :prob 1/7}
+       :1 {:prev nil :prob 1/7}
+       :2 {:prev nil :prob 1/7}
+       :3 {:prev nil :prob 1/7}
+       :4 {:prev nil :prob 1/7}
+       :5 {:prev nil :prob 1/7}
+       :6 {:prev nil :prob 1/7}}
    :1 {:0 {:prev 0 :prob 1}
        :1 {:prev 0 :prob 1}
        :2 {:prev 0 :prob 1}
