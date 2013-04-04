@@ -177,10 +177,6 @@
                 (* weight (gaussian obs mean cov))))]
     (reduce + (map component gmm))))
 
-(defn P
-  "Calculate the probability of a given observation given a model."
-  [obs gmm]
-  (gaussian-mixture obs gmm))
 
 (defn init-viterbi
   "Initialize the data structure for the Viterbi algorithm."
@@ -236,7 +232,7 @@
 (defn transition-prob [hmm prev cur]
   (.get (:trans hmm) prev cur))
 
-(defn emitting-prob [hmm obs state]
+(defn emitting-prob [obs hmm gmm state]
   (gaussian-mixture obs (get (:mixture hmm) state)))
 
 (defn maximum-prob
@@ -244,18 +240,19 @@
    hidden markov model, determine the best transtion to this state and
    its probability."
   [state obs prev-states hmm]
-  (letfn [(calc-prob [prob prev]
-            (+ prob
-               (transition-prob hmm prev state)
-               (emitting-prob obs gmm state)))]
-    (let [candidates (zipmap (keys prev-states)
-                             (map (fn [s] (calc-prob (:prob (val s)) (key->num (key s))))
-                                  prev-states))]
-      (println candidates)
-      ;; Get the max state-prob pair
-      (reduce #(if (> (val %1) (val %2)) %1 %2)
-              ;; update all probs of going into this state
-              candidates))))
+  (let [emit (emitting-prob obs hmm gmm state)]
+    (letfn [(calc-prob [prob prev]
+              (let [trans (transition-prob hmm prev state)]
+                (* prob (transition-prob hmm prev state) emit)))]
+      (let [candidates (zipmap (keys prev-states)
+                               (map (fn [s] (calc-prob (:prob (val s))
+                                                      (key->num (key s))))
+                                    prev-states))]
+        (println candidates)
+        ;; Get the max state-prob pair
+        (reduce #(if (> (val %1) (val %2)) %1 %2)
+                ;; update all probs of going into this state
+                candidates)))))
 
 (defn update-table
   "Update the Viteri table using the given observation and hidden
@@ -280,6 +277,18 @@
     (let [obs  (first observations)
           next (rest observations)]
       (recur next hmm (update-table db obs hmm)))))
+
+
+(defn infinity? [x]
+  (or (= x Double/POSITIVE_INFINITY)
+      (= x Double/NEGATIVE_INFINITY)))
+
+(defn unlog-matrix [matrix]
+  (matrix-map
+   (fn [x]
+     (let [v (pow Math/E x)]
+       (if (infinity? v) 0.0 v)))
+   matrix))
 
 (def input1
   [[-2.0056 -0.5617 -0.1262 -0.2387 -0.3990 0.2257 0.5405 -0.1414 0.0202 0.0240 0.0511 0.2644 0.0624 -0.1833]
@@ -693,6 +702,9 @@
            [-10000000002.05879 -10000000209.71791 -10000000079.47992 -10000000049.83497  -0.13719           -2.05879            -10000003288.28764]
            [-10000000003.08927 -10000000210.74839 -10000000210.64325 -10000000203.14013  10000000042.40795  -0.04835            -3.08927]
            [-10000000000.00000 -10000000000.00000 -10000000000.00000 -10000000000.00000  10000000000.00000   -10000000000.00000 -10000000000.00000]]))
+
+(def noAunlog (matrix (unlog-matrix noA)))
+
 (def noMM ;; the mixture model for each state consists of a single gaussian
   [[{:weight 0.00000 :mean [ 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000]
      :sd (diag [0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000])}]
@@ -715,28 +727,28 @@
    :num_states 7
    :num_mixtures 1
    :iter 10
-   :trans noA
+   :trans noAunlog
    :mixture noMM
-   :prob (vec (take 7 (repeat 1/7)))})
+   :prob (vec (take 7 (repeat (double 1/7))))})
 
 
 (def example-solution
   ^{:doc "In the form of {:# {:# {:prev # :prob #]}
                          {timestamp {state {previous-best previous-prob}}}"}
-  {:0 {:0 {:prev nil :prob 1/7}
-       :1 {:prev nil :prob 1/7}
-       :2 {:prev nil :prob 1/7}
-       :3 {:prev nil :prob 1/7}
-       :4 {:prev nil :prob 1/7}
-       :5 {:prev nil :prob 1/7}
-       :6 {:prev nil :prob 1/7}}
-   :1 {:0 {:prev 0 :prob 1}
-       :1 {:prev 0 :prob 1}
-       :2 {:prev 0 :prob 1}
-       :3 {:prev 0 :prob 1}
-       :4 {:prev 0 :prob 1}
-       :5 {:prev 0 :prob 1}
-       :6 {:prev 0 :prob 1}}
+  {:0 {:0 {:prev nil :prob 0.1428571428571429}
+       :1 {:prev nil :prob 0.1428571428571429}
+       :2 {:prev nil :prob 0.1428571428571429}
+       :3 {:prev nil :prob 0.1428571428571429}
+       :4 {:prev nil :prob 0.1428571428571429}
+       :5 {:prev nil :prob 0.1428571428571429}
+       :6 {:prev nil :prob 0.1428571428571429}}
+   :1 {:0 {:prev 0 :prob 1.0}
+       :1 {:prev 0 :prob 1.0}
+       :2 {:prev 0 :prob 1.0}
+       :3 {:prev 0 :prob 1.0}
+       :4 {:prev 0 :prob 1.0}
+       :5 {:prev 0 :prob 1.0}
+       :6 {:prev 0 :prob 1.0}}
    :2 {:0 {:prev 1 :prob 0.5}
        :1 {:prev 1 :prob 0.2}
        :2 {:prev 1 :prob 0.3}
