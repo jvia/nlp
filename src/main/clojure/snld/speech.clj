@@ -117,8 +117,10 @@
 
 ;; Log math
 (defn log-add [a b])
-(defn log-mul [a b]
-  (+ a b))
+(defn log-mul [a b & some]
+  (if (not (nil? some))
+    (+ a b (reduce + some))
+    (+ a b)))
 
 ;; Need a HMM with a Bakis topology (defined by state transition
 ;; matrix)
@@ -160,7 +162,7 @@
 
 (defn gaussian
   "Calcuate the probability of an observation given the parameters of
-  a multi-variate Gaussian. "
+   a multi-variate Gaussian. "
   [obs mean cov]
   ;; TODO: compare with version from notes and see if equivalent
   (let [n (length obs)
@@ -176,19 +178,6 @@
             (if (zero? weight) 0
                 (* weight (gaussian obs mean cov))))]
     (reduce + (map component gmm))))
-
-
-(defn init-viterbi
-  "Initialize the data structure for the Viterbi algorithm."
-  [obs t hmm]
-  [{:t t :states
-    (into {}
-          (for [state (range (:num_states hmm))]
-            {(keyword (str state))
-             {:prev 0
-              :prob (+ (log (nth (:prob hmm) state))
-                       (log (gaussian-mixture obs (nth (:mixture hmm) state))))}}))}])
-
 
 (defn key->num [key]
   (Integer/valueOf (subs (str key) 1)))
@@ -243,7 +232,7 @@
   (let [emit (emitting-prob obs hmm gmm state)]
     (letfn [(calc-prob [prob prev]
               (let [trans (transition-prob hmm prev state)]
-                (* prob trans emit)))]
+                (bigdec (* prob trans emit))))]
       (let [candidates
             (into {} (map (fn [st] {(key st) (calc-prob (:prob (val st))
                                                        (key->num (key st)))})
@@ -281,7 +270,7 @@
   (loop [observations observations
          hmm hmm
          db (create-table hmm)]
-    (if (empty? observations) (most-likely-path db)
+    (if (empty? observations) db #_(most-likely-path db)
         (let [obs  (first observations)
               next (rest observations)]
           (recur next hmm (update-table db obs hmm))))))
@@ -295,7 +284,7 @@
   (matrix-map
    (fn [x]
      (let [v (pow Math/E x)]
-       (if (infinity? v) 0.0 v)))
+       (if (infinity? v) 0.0M (bigdec v))))
    matrix))
 
 (def input1
@@ -690,15 +679,19 @@
      :sd (diag [0.52574  0.06199  0.08811  0.16488  0.11336  0.12230  0.13745  0.02724  0.00510  0.00411  0.00555  0.00995  0.00988  0.01141])}]
    [{:weight 0.00000 :mean [ 0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000]
      :sd (diag [0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000])}]])
+
+(def yesAunlog
+  (matrix (unlog-matrix yesA)))
+
 (def yesHMM
   {:output "yes"
    :num_features 14
    :num_states 7
    :num_mixtures 1
    :iter 10
-   :trans yesA
+   :trans yesAunlog
    :mixture yesMM
-   :prob [1.0 0.0 0.0 0.0 0.0 0.0 0.0]})
+   :prob (vec (take 7 (repeat (double 1/7))))})
 
 ;;; NO hmm
 (def noA
@@ -714,7 +707,7 @@
 (def noAunlog (matrix (unlog-matrix noA)))
 
 (def noMM ;; the mixture model for each state consists of a single gaussian
-  [[{:weight 0.00000 :mean [ 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000]
+  [[{:weight 0.00000 :mean [0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000]
      :sd (diag [0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000 0.00000])}]
    [{:weight 1.00000 :mean [-2.53457 -0.52503 -0.03429 -0.13210 0.01341 -0.05493 -0.18780 -0.04576 -0.01952 -0.00593 -0.01056 0.01584 0.01032 0.01530]
      :sd (diag [0.16152 0.04408 0.04349 0.05813 0.11706 0.08391 0.13401 0.00804 0.00281 0.00597 0.00876 0.01370 0.01054 0.01414])}]

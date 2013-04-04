@@ -36,7 +36,13 @@
    "and"          ["(X\\*X)*X"]
    "might"        ["(S\\NP)//VP"]
    "prove"        ["VP//NP"]
-   "completeness" ["NP"]})
+   "completeness" ["NP"]
+   "andie"        ["NP"]
+   "steve"        ["NP"]
+   "loves"        ["(S\\NP)//NP"]})
+
+(defrecord Atom [content])
+(defrecord Functor [left func right])
 
 (defn pprint-lexicon [lexicon]
   ;;TODO
@@ -74,12 +80,24 @@
 ;;      (NP (RB there))
 ;;      (. ?)))
 
-(defrecord NP [])
-(defrecord )
-(defprotocol App
-  (forwward [a b] "Forward application")
-  (backward [a b] "Backward application"))
+(defprotocol Application
+  (forward  [a] "Forward application")
+  (backward [a] "Backward application"))
+(defprotocol Combination
+  (forward  [a] "")
+  (backward [a] ""))
+(defprotocol TypeRaise
+  (forward  [a] "")
+  (backward [a] ""))
 
+(defrecord NP [content])
+(defrecord VPfNP [content])
+(extend-type VPfNP
+  Application
+  (forward [a]
+    ())
+  (backaward [b]
+    ()))
 
 
 (def sents
