@@ -243,16 +243,15 @@
   (let [emit (emitting-prob obs hmm gmm state)]
     (letfn [(calc-prob [prob prev]
               (let [trans (transition-prob hmm prev state)]
-                (* prob (transition-prob hmm prev state) emit)))]
-      (let [candidates (zipmap (keys prev-states)
-                               (map (fn [s] (calc-prob (:prob (val s))
-                                                      (key->num (key s))))
-                                    prev-states))]
-        (println candidates)
-        ;; Get the max state-prob pair
-        (reduce #(if (> (val %1) (val %2)) %1 %2)
-                ;; update all probs of going into this state
-                candidates)))))
+                (* prob trans emit)))]
+      (let [candidates
+            (into {} (map (fn [st] {(key st) (calc-prob (:prob (val st))
+                                                       (key->num (key st)))})
+                          prev-states))
+            best (reduce #(if (> (val %1) (val %2)) %1 %2)
+                         ;; update all probs of going into this state
+                         candidates)]
+        {:prev (first best) :prob (second best)}))))
 
 (defn update-table
   "Update the Viteri table using the given observation and hidden
@@ -261,22 +260,31 @@
   (let [cur-t  (max-key db)
         next-t (inc cur-t)
         prev-states (get db (num->key cur-t))
-        states (range (:num_states hmm))]
-    (assoc db
-      (num->key next-t)
-      (zipmap (map num->key states)
-              (map #(maximum-prob % obs prev-states hmm) states)))))
+        states (range (:num_states hmm))
+        keys (map num->key states)
+        vals (map #(maximum-prob % obs prev-states hmm) states)]
+    (assoc db (num->key next-t) (zipmap keys vals))))
+
+(defn create-table
+  "Create the base "
+  [hmm]
+  (let [states (range (:num_states hmm))]
+    {(num->key 0)
+     (zipmap (map num->key states)
+             (repeatedly (fn [] {:prev nil :prob 1})))}))
 
 (defn viterbi
   "Given a set of observations and a hiddern markov model, find the
    Viterbi path through the hidden markov model which best explains
    the observation sequence."
-  [observations hmm db]
-  (if (empty? observations)
-    (most-likely-path db)
-    (let [obs  (first observations)
-          next (rest observations)]
-      (recur next hmm (update-table db obs hmm)))))
+  [observations hmm]
+  (loop [observations observations
+         hmm hmm
+         db (create-table hmm)]
+    (if (empty? observations) (most-likely-path db)
+        (let [obs  (first observations)
+              next (rest observations)]
+          (recur next hmm (update-table db obs hmm))))))
 
 
 (defn infinity? [x]
