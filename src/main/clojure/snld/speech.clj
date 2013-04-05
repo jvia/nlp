@@ -275,12 +275,29 @@
               next (rest observations)]
           (recur next hmm (update-table db obs hmm))))))
 
+(defn max-transition [observation hmm table state]
+  (let [mixture   (get (:emit-prob hmm) state)
+        emit-prob (gauss-pdf observation (:mean mixture) (:covariance mixture))]
+    (for [prev-state (range (:states hmm))]
+      [prev-state
+       ;; CALCULATE PROBABILITY HERE
+       (* (bigdec emit-prob) 1.0M
+          )])))
+
+
 (defn initialize [observation hmm table]
   (let [states (range (:states hmm))]
     (for [state states]
       {(num->key state) (get (:init-prob hmm) state)})))
 
-(defn update [observation hmm table])
+(defn update [observation hmm table]
+  (let [next-t (num->key (inc (max-time table)))
+        states (range (:states hmm))]
+    {next-t
+     (into {}
+           (for [cur-state states]
+             {(num->key cur-state)
+              (max-transition observation hmm table cur-state)}))}))
 
 (defn viterbi-step
   "Performs one step of the viterbi algorithm so that it can be used
