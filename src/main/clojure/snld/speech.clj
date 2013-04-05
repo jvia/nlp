@@ -106,14 +106,6 @@
       (.toGenericString method))))
 
 
-;; dict
-(def dict
-  {:red    [:r  :eh :d]
-   :green  [:g  :r  :iy :n]
-   :white  [:w  :ay :t]
-   :white2 [:hh :w  :ay :t]})
-
-
 
 ;; Log math
 (defn log-add [a b])
@@ -178,6 +170,14 @@
             (if (zero? weight) 0
                 (* weight (gaussian obs mean cov))))]
     (reduce + (map component gmm))))
+
+(defn gauss-pdf
+  "Calcuate the probability of an observation given the parameters of a
+   multi-variate Gaussian."
+  [obs mean cov]
+  (let [n (length obs)
+        norm (minus obs mean)]
+    (exp (mult -1/2 (mmult (trans norm) (solve cov) norm)))))
 
 (defn key->num [key]
   (Integer/valueOf (subs (str key) 1)))
@@ -275,14 +275,28 @@
               next (rest observations)]
           (recur next hmm (update-table db obs hmm))))))
 
+(defn get-prob-at-time [state time table]
+  (let [statekey (num->key state)
+        timekey (num->key time)]
+    (-> table timekey statekey :prob)))
+
+(defn get-transition-prob [hmm prev-state cur-state]
+  (-> hmm :trans-prob (.get prev-state cur-state)))
+
+(defn bigdec-mul
+  "Multiply the arguments, casting them all to big decimal. Will be
+  slow but whatevs."
+  [& some]
+  (apply * (map bigdec some)))
+
 (defn max-transition [observation hmm table state]
   (let [mixture   (get (:emit-prob hmm) state)
         emit-prob (gauss-pdf observation (:mean mixture) (:covariance mixture))]
     (for [prev-state (range (:states hmm))]
-      [prev-state
-       ;; CALCULATE PROBABILITY HERE
-       (* (bigdec emit-prob) 1.0M
-          )])))
+      (let [prev-state-prob (get-prob-at-time prev-state (max-time table) table)
+            transition-prob (get-transition-prob hmm prev-state state)]
+        [prev-state (bigdec-mul emit-prob prev-state-prob transition-prob)]))))
+
 
 
 (defn initialize [observation hmm table]
@@ -321,21 +335,21 @@
 
 
 (def ex-table
-  {:0 {:1 {:prev-best nil :prob 0.2}
-       :2 {:prev-best nil :prob 0.3}
+  {:0 {:0 {:prev-best nil :prob 0.2}
+       :1 {:prev-best nil :prob 0.3}
+       :2 {:prev-best nil :prob 0.1}
        :3 {:prev-best nil :prob 0.1}
-       :4 {:prev-best nil :prob 0.1}
-       :5 {:prev-best nil :prob 0.3}}
-   :1 {:1 {:prev-best :3  :prob 0.3}
-       :2 {:prev-best :1  :prob 0.2}
-       :3 {:prev-best :2  :prob 0.1}
-       :4 {:prev-best :5  :prob 0.3}
-       :5 {:prev-best :3  :prob 0.4}}
-   :2 {:1 {:prev-best :3  :prob 0.02}
-       :2 {:prev-best :3  :prob 0.01}
-       :3 {:prev-best :1  :prob 0.02}
-       :4 {:prev-best :2  :prob 0.05}
-       :5 {:prev-best :4  :prob 0.04}}})
+       :4 {:prev-best nil :prob 0.3}}
+   :1 {:0 {:prev-best :3  :prob 0.3}
+       :1 {:prev-best :1  :prob 0.2}
+       :2 {:prev-best :2  :prob 0.1}
+       :3 {:prev-best :5  :prob 0.3}
+       :4 {:prev-best :3  :prob 0.4}}
+   :2 {:0 {:prev-best :3  :prob 0.02}
+       :1 {:prev-best :3  :prob 0.01}
+       :2 {:prev-best :1  :prob 0.02}
+       :3 {:prev-best :2  :prob 0.05}
+       :4 {:prev-best :4  :prob 0.04}}})
 
 (def ex-tableio
   {0 {1 {:prev-best nil :prob 0.2}
@@ -358,13 +372,7 @@
 
 
 
-(defn gauss-pdf
-  "Calcuate the probability of an observation given the parameters of a
-   multi-variate Gaussian."
-  [obs mean cov]
-  (let [n (length obs)
-        norm (minus obs mean)]
-    (exp (mult -1/2 (mmult (trans norm) (solve cov) norm)))))
+
 
 
 
