@@ -190,12 +190,12 @@
   [db t]
   (let [key (num->key t) entry (get db key)]
     (loop [states (keys entry) best-state -1 best-prob -1]
-      (if (empty? states) {:best best-state :prob best-prob}
-          (let [cur-state (first states)
-                cur-prob  (:prob (get entry cur-state))]
-            (if (> cur-prob best-prob)
-              (recur (rest states) cur-state cur-prob)
-              (recur (rest states) best-state best-prob)))))))
+      (if (empty? states)
+        (conj {:best best-state} (get (get db key) best-state))
+        (let [cur-state (first states) cur-prob  (:prob (get entry cur-state))]
+          (if (> cur-prob best-prob)
+            (recur (rest states) cur-state cur-prob)
+            (recur (rest states) best-state best-prob)))))))
 
 
 (defn max-prev
@@ -204,14 +204,14 @@
   (let [best-cur (:best (max-cur db t))]
     (:prev (get (get db (num->key t)) best-cur))))
 
-(defn max-key [db]
+(defn max-time [db]
   (apply max (map key->num (keys db))))
 
 (defn most-likely-path 
   "Given a Viterbi table, backtrack through the table to recover the
    most likely path."
   [db]
-  (let [final-t (max-key db)
+  (let [final-t (max-time db)
         {end :best endp :prob} (max-cur db final-t)]
     (loop [t final-t path
            (list (key->num end))]
@@ -246,7 +246,7 @@
   "Update the Viteri table using the given observation and hidden
    markov model."
   [db obs hmm]
-  (let [cur-t  (max-key db)
+  (let [cur-t  (max-time db)
         next-t (inc cur-t)
         prev-states (get db (num->key cur-t))
         states (range (:num_states hmm))
@@ -275,17 +275,67 @@
               next (rest observations)]
           (recur next hmm (update-table db obs hmm))))))
 
+(defn initialize [observation hmm table]
+  (let [states (range (:states hmm))]
+    (for [state states]
+      {(num->key state) (get (:init-prob hmm) state)})))
+
+(defn update [observation hmm table])
+
+(defn viterbi-step
+  "Performs one step of the viterbi algorithm so that it can be used
+  incremenetally. If table is nil, a table is initialized based off
+  this observation."
+  [observation hmm table]
+  (if (nil? table)
+    (update observation hmm (initialize observation hmm table))
+    (update observation hmm table)))
+
+(defn extract-solution
+  "Extract the viterbi path from the table and return it with its
+  probability."
+  [table]
+  (let [final-t (max-time table)
+        {best :best prev :prev-best prob :prob} (max-cur table final-t)]
+    (loop [t (dec final-t) cur prev path (list best)]
+      (if (nil? cur) {:path path :prob prob}
+          (let [entry (get (get table (num->key t)) cur)]
+            (recur (dec t) (:prev-best entry) (cons cur path)))))))
 
 
+(def ex-table
+  {:0 {:1 {:prev-best nil :prob 0.2}
+       :2 {:prev-best nil :prob 0.3}
+       :3 {:prev-best nil :prob 0.1}
+       :4 {:prev-best nil :prob 0.1}
+       :5 {:prev-best nil :prob 0.3}}
+   :1 {:1 {:prev-best :3  :prob 0.3}
+       :2 {:prev-best :1  :prob 0.2}
+       :3 {:prev-best :2  :prob 0.1}
+       :4 {:prev-best :5  :prob 0.3}
+       :5 {:prev-best :3  :prob 0.4}}
+   :2 {:1 {:prev-best :3  :prob 0.02}
+       :2 {:prev-best :3  :prob 0.01}
+       :3 {:prev-best :1  :prob 0.02}
+       :4 {:prev-best :2  :prob 0.05}
+       :5 {:prev-best :4  :prob 0.04}}})
 
-
-
-
-
-
-
-
-
+(def ex-tableio
+  {0 {1 {:prev-best nil :prob 0.2}
+      2 {:prev-best nil :prob 0.3}
+      3 {:prev-best nil :prob 0.1}
+      4 {:prev-best nil :prob 0.1}
+      5 {:prev-best nil :prob 0.3}}
+   1 {1 {:prev-best 3  :prob 0.3}
+      2 {:prev-best 1  :prob 0.2}
+      3 {:prev-best 2  :prob 0.1}
+      4 {:prev-best 5  :prob 0.3}
+      5 {:prev-best 3  :prob 0.4}}
+   2 {1 {:prev-best 3  :prob 0.02}
+      2 {:prev-best 3  :prob 0.01}
+      3 {:prev-best 1  :prob 0.02}
+      4 {:prev-best 2  :prob 0.05}
+      5 {:prev-best 4  :prob 0.04}}})
 
 
 
