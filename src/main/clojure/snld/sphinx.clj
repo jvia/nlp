@@ -1,5 +1,4 @@
-(ns
-    ^{:doc "Wrappers around Sphinx"
+(ns ^{:doc "Wrappers around Sphinx"
       :author "Jeremiah Via"}
   snld.sphinx
   (:import java.net.URL
