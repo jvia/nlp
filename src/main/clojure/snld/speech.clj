@@ -227,15 +227,53 @@
 ;; STEPS:  1) compute initial probabilities using VQ
 ;;         2) use baum-welch to better fit data (only do if basic VQ doesn't work well enough)
 
-(defn vector-quantization [feature-list num-states]
-  [])
+(defn random-vectors
+  "Select num random vectors in the given feature list to use as initial
+  values for the codebook vectors."
+  [n feature-list]
+  (let [max (dec (length feature-list))]
+    (take n (repeatedly #(nth feature-list (Math/round (* (Math/random) max)))))))
 
-(defn baum-welch [codebooks feature-list]
-  (let [num-states (length codebooks)]))
+(defn closest-vector [v cb]
+  (reduce (fn [a b] (if (< (euclidean-distance (key a) v)
+                          (euclidean-distance (key b) v))
+                     a b)) cb))
 
-(defn train [feature-list & {:keys [num-states] :or {num-states 5}}]
-  (let [codebooks (vector-quantization feature-list num-states)]
-    (baum-welch codebooks feature-list)))
+(defn assign
+  "Assign each feature to its best-fitting codebook."
+  [codebook-m features]
+  (loop [cb codebook-m
+         [x & xs] features]
+    (if (nil? x) cb
+        (let [[k v] (closest-vector x cb)
+              cb' (assoc cb k (conj v x))]
+          (recur cb' xs)))))
+
+
+(def minicb
+  {[2.0 -0.1] []
+   [1.0  0.5] []
+   [2.5 -0.5] []})
+
+(def minifeat
+  [[1.0 1.0]
+   [2.0 2.0]
+   [1.0 2.0]
+   [2.0 1.0]])
+
+
+#_(defn vector-quantization [feature-list & {:keys [mixture-components]
+                                             :or {mixture-components 1}}]
+    (loop [codebooks ])
+    (let [codebooks (random-vectors mixture-components feature-list)]
+      codebooks))
+
+#_(defn baum-welch [codebooks feature-list]
+    (let [num-states (length codebooks)]))
+
+#_(defn train [feature-list & {:keys [num-states] :or {num-states 5}}]
+    (let [codebooks (vector-quantization feature-list num-states)]
+      (baum-welch codebooks feature-list)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
