@@ -284,18 +284,30 @@
 (defn vector-covariance
   "Given a mean vector and a list of vectors, compute the covariance."
   [mean features]
-  (let [dim (length (first features))]
-    (for [x (range dim)
-          y (range dim)]
-      (let [ex (nth mean x)
-            ey (nth mean y)
-            xs (map #(nth % x) features) 
-            ys (map #(nth % y) features)
-            raw (mult (map (fn [x] (- x ex)) xs)
-                      (map (fn [y] (- y ey)) ys))]
-        (/ (apply + raw) (length raw))))))
+  (let [dim (length (first features))
+        flat (for [x (range dim)
+                   y (range dim)]
+               (let [ex (nth mean x)
+                     ey (nth mean y)
+                     xs (map #(nth % x) features) 
+                     ys (map #(nth % y) features)
+                     raw (mult (map (fn [x] (- x ex)) xs)
+                               (map (fn [y] (- y ey)) ys))]
+                 (/ (apply + raw) (length raw))))]
+    (matrix flat dim)))
 
-#_(defn extract-mixture-model)
+(defn extract-mixture-model
+  "Given the map of codebook vectors and their closest feature vectors,
+  extract the Gaussian mixture model that represents the data.
+
+  This initial extraction assumes that all Gaussian mixtures have the same weighting.
+
+  TODO: Extend ---  Currently only creates GMM of a single mixture component. "
+  [cb-map]
+  (let [weight (/ 1.0 (length cb-map))
+        [mean features] (first cb-map)]
+    (map->GaussMixture {:weight weight :mean mean
+                        :covariance (vector-covariance mean features)})))
 
 #_(defn baum-welch [codebooks feature-list]
     (let [num-states (length codebooks)]))
