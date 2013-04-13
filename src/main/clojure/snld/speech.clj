@@ -265,12 +265,19 @@
                 unadjsted-u (reduce plus (val cb))]
             {(vec (mult normalizing-factor unadjsted-u)) nil}))))
 
+(defn vector-mean
+  "Calculate the mean vecotr of a set of vectors."
+  [vectors]
+  (map (partial * (/ 1.0 (length vectors)))
+       (reduce plus vectors)))
 
-(defn vector-quantization [feature-list & {:keys [mixture-components]
-                                           :or {mixture-components 1}}]
+(defn vector-quantization
+  "Perform k-means on the feature list, returning the centroid vectors
+  and the associated feature vectors."
+  [feature-list & {:keys [mixture-components] :or {mixture-components 1}}]
   (loop [cb (init-codebook mixture-components feature-list) old-cb nil]
     (println cb)
-    (if (= cb old-cb) cb
+    (if (= cb old-cb) (kmm-assign cb feature-list)
         (recur (kmm-update (kmm-assign cb feature-list)) cb))))
 
 #_(defn baum-welch [codebooks feature-list]
