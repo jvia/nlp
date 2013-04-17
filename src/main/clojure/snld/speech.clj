@@ -142,7 +142,7 @@
 
 
 (defn max-transition [observation hmm table state]
-  (let [mixture   (get (:emit-prob hmm) state)
+  (let [mixture   (nth (:emit-prob hmm) state)
         emit-prob (gauss-pdf observation (:mean mixture) (:covariance mixture))]
     (let [candidates
           (for [prev-state (range (:states hmm))]
@@ -161,7 +161,6 @@
 
 
 (defn update [observation hmm table]
-  (println table)
   (let [next-t (num->key (inc (max-time table)))
         states (range (:states hmm))]
     (into table
@@ -216,17 +215,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;; HMM training
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; - To start training, can assign random, equally-likely, or other values to pi and a_ij, but does not work for b_j(o_t)
-;;
-;; - For b_j:
-;;   - divide training data into equal length segments., computer bj(o) for each segment. Called a flat start.
-;;   - split segment (state) into mixture components using VQ
-;;   -
-
-
-;; STEPS:  1) compute initial probabilities using VQ
-;;         2) use baum-welch to better fit data (only do if basic VQ doesn't work well enough)
 
 (defn random-vectors
   "Select num random vectors in the given feature list to use as initial
@@ -328,7 +316,8 @@
   [word-str features & {:keys [num-states] :or {num-states 5}}]
   (let [feat-per-state (int (/ (length features) num-states))]
     (map->HMM
-     {:output word-str :states num-states
+     {:output word-str
+      :states num-states
       :init-prob  (vec (cons 1.0 (take (dec num-states) (repeatedly (fn [] 0.0)))))
       :trans-prob (matrix (for [x (range num-states) y (range num-states)] (if (or (= x y) (= x (dec y))) 0.5 0.0)) num-states)
       :emit-prob (map #(-> % vector-quantization extract-mixture-model) (partition-flat feat-per-state features))})))
