@@ -161,6 +161,7 @@
 
 
 (defn update [observation hmm table]
+  (println table)
   (let [next-t (num->key (inc (max-time table)))
         states (range (:states hmm))]
     (into table
@@ -246,6 +247,7 @@
 
 (defn kmm-assign
   "Assign each feature to its best-fitting codebook."
+  ;; TODO: Look into using partition-by...
   [codebook-m features]
   (loop [cb codebook-m
          [x & xs] features]
@@ -309,14 +311,30 @@
     (map->GaussMixture {:weight weight :mean mean
                         :covariance (vector-covariance mean features)})))
 
-#_(defn baum-welch [codebooks feature-list]
-    (let [num-states (length codebooks)]))
+(defn baum-welch [codebooks feature-list]
+  (let [num-states (length codebooks)]))
 
-#_(defn train [feature-list & {:keys [num-states] :or {num-states 5}}]
-    (let [codebooks (vector-quantization feature-list num-states)]
-      (baum-welch codebooks feature-list)))
+(defn partition-into
+  "Partions multiple collections simulataenously and combine the same
+  partition position in each collection"
+  [num coll]
+  (let [partitions (map #(partition (int (/ (length %) num)) %) coll)]
+    (for [i (range (length (first partitions)))]
+      (mapcat #(nth % i) partitions))))
 
 
+(defn train-hmm
+  "Given a phrase and a list of feature vectors, train a HMM."
+  [word-str features & {:keys [num-states] :or {num-states 5}}]
+  (let [feat-per-state (int (/ (length features) num-states))]
+    (map->HMM
+     {:output word-str :states num-states
+      :init-prob  (vec (cons 1.0 (take (dec num-states) (repeatedly (fn [] 0.0)))))
+      :trans-prob (matrix (for [x (range num-states) y (range num-states)] (if (or (= x y) (= x (dec y))) 0.5 0.0)) num-states)
+      :emit-prob (map #(-> % vector-quantization extract-mixture-model) (partition-flat feat-per-state features))})))
+
+
+(def minifeat [[1.0 0.0] [2.0 0.0] [3.0 0.0]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  DATA  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
