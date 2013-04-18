@@ -36,15 +36,24 @@
    :NP :NP})
 
 (def lexicon
-  {:the    [(complex :right :N :NP)]
-   :bad    [(complex :right :N :N)]
-   :boy    [:N]
-   :made   [(complex :right :NP (complex :left :NP :S))]
-   :that   [(complex :right :N :NP)]
-   :mess   [:N]
-   :andie  [:NP]
-   :stevie [:NP]
-   :loves  [(complex :right :NP (complex :left :NP :S))]})
+  {;; Determiners
+   :the    (complex :right :N :NP)
+   ;; Adjectives
+   :bad    (complex :right :N :N)
+   ;; Verbs
+   :loves  (complex :right :NP (complex :left :NP :S))
+   :made   (complex :right :NP (complex :left :NP :S))
+   :bit    
+   ;; Pronoun
+   :that   (complex :right :N :NP)
+   ;; Nouns
+   :boy    :N
+   :mess   :N
+   :dog    :N
+   ;; Proper nouns
+   :andie  :NP
+   :stevie :NP
+   :john   :NP})
 
 
 (defn complex [dir take yield]
@@ -54,4 +63,43 @@
   (= (type token) clojure.lang.Keyword))
 
 (defn complex? [token]
-  (= (type token) clojure.lang.PersistentHashMap))
+  (or
+   (= (type token) clojure.lang.PersistentHashMap)
+   (= (type token) clojure.lang.PersistentArrayMap)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Application
+(defn- left-appli? [alpha beta]
+  (and (complex? beta)
+       (= (:dir beta) :left)
+       (= (:take beta) alpha)))
+
+(defn- right-appli? [alpha beta]
+  (and (complex? alpha)
+       (= (:dir alpha) :right)
+       (= (:take alpha) beta)))
+
+(defn- left-appli [alpha beta]
+  (:yield beta))
+
+(defn- right-appli [alpha beta]
+  (:yield alpha))
+
+(defn appli
+  "Apply a lexical item with a functor type to an argument with an
+  appropriate type."
+  [alpha beta]
+  (cond (left-appli? alpha beta)  (left-appli alpha beta)
+        (right-appli? alpha beta) (right-appli alpha beta)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn compose
+  ""
+  [alpha beta])
+
+
+(defn type-raise
+  ""
+  [alpha beta])
