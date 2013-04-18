@@ -16,17 +16,47 @@
 
 (def ^:dynamic *parse*)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data representation
 
 (defn complex [dir take yield]
   {:dir dir  :take take :yield yield})
 
+
 (defn atom? [token]
   (= (type token) clojure.lang.Keyword))
+
 
 (defn complex? [token]
   (or
    (= (type token) clojure.lang.PersistentHashMap)
    (= (type token) clojure.lang.PersistentArrayMap)))
+
+
+(defn get-syntax [lexicon lex-entry]
+  (get lexicon lex-entry))
+
+
+(defn ccg->str [ccg]
+  (if (atom? ccg) (subs (str ccg) 1)
+      (let [{take :take yield :yield dir :dir} ccg
+            ret (if (atom? yield) (ccg->str yield) (str "(" (ccg->str yield) ")"))
+            arg (if (atom? take)  (ccg->str take)  (str "(" (ccg->str take) ")"))]
+        (str ret
+             (if (= :right dir) "/" "\\")
+             arg))))
+
+
+(defn pprint-ccg [ccg]
+  (println (ccg->str ccg)))
+
+
+(defn pprint-lexicon [lexicon]
+  (doall (map #(println (key %) "=>" (ccg->str (val %))) lexicon))
+  nil)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Lexicon
 
 (def mappings
   {:ADJ (complex :left  :N :N)
@@ -36,6 +66,7 @@
 (def lexicon
   {;; Determiners
    :the    (complex :right :N :NP)
+   ;; {:word "the" :syntax (complex :right :N :NP) :semantics (fn [X] [:det x])}
    ;; Adjectives
    :bad    (complex :right :N :N)
    ;; Verbs
@@ -52,8 +83,6 @@
    :andie  :NP
    :stevie :NP
    :john   :NP})
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Application
@@ -129,34 +158,34 @@
   left-branching derivation?)"
   ;; TODO move from automatic sentence construction to abstract types
   [alpha]
-  (complex :right (complex :left alpha :S) :s))
+  (complex :right (complex :left alpha :S) :S))
 
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parser
 
-(defn shift [key parse]
-  (cons (get lexicon key) parse))
+#_(defn shift [key parse]
+  (cons (get-syntax lexicon key) parse))
 
 
-(defn redüc [parse]
+#_(defn redüc [parse]
   (let [[alpha beta & rest] parse]
-    (cond (applicable? alpha beta) (cons (appli alpha beta)   rest)
-          (composable? alpha beta) (cons (compose alpha beta) rest)
-          :else parse)))
+    (filter (complement nil?)
+            [(cons (appli alpha beta) rest)
+             (cons (compose alpha beta) rest)
+             (cons (type-raise alpha) (cons beta rest))])))
 
 
-(defn parse [token parse]
-  (let [parse' (shift token parse)]
-      (println parse')
-    (redüc parse')))
+#_(defn parse [token parse]
+  (let [parse' (map #(shift token %) parse)]
+    (mapcat redüc parse')))
 
-
-(defn batch-parse [str]
+#_(defn batch-parse [str]
   (let [token-list (map #(keyword %) (str/split str #" "))]
     (println "Tokens:" token-list)
     (loop [[token & rest] token-list parz nil]
-      (println ">> " parz)
+      (println parz)
+      (println "--------------")
         (if (nil? token) parz
           (recur rest (parse token parz))))))
