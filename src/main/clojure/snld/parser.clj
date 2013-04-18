@@ -11,7 +11,8 @@
 ;; and demonstrate how this bias changes the parsing result.
 (ns ^{:doc "An incremental parser."
       :author "Jeremiah Via <jeremiah.via@gmail.com>"}
-  snld.parser)
+  snld.parser
+  (:require [clojure.string :as str]))
 
 (def ^:dynamic *parse*)
 
@@ -52,6 +53,8 @@
    :stevie :NP
    :john   :NP})
 
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Application
 (defn- appli-right?
@@ -73,6 +76,8 @@
        (= (:dir beta) :left)
        (= (:take beta) alpha)))
 
+(defn- applicable? [alpha beta]
+  (or (appli-left? alpha beta) (appli-right? alpha beta)))
 
 (defn appli
   "Apply a lexical item with a functor type to an argument with an
@@ -105,6 +110,10 @@
        (= (:take beta) (:yield alpha))))
 
 
+(defn- composable? [alpha beta]
+  (or (compose-left? alpha beta) (compose-right? alpha beta)))
+
+
 (defn compose
   "Compose two functors together, either using left or right composition."
   [alpha beta]
@@ -118,6 +127,36 @@
 (defn type-raise
   "Performs right type-raising (succifient for incremental,
   left-branching derivation?)"
+  ;; TODO move from automatic sentence construction to abstract types
   [alpha]
-  (complex :right (complex :left alpha :T) :T))
+  (complex :right (complex :left alpha :S) :s))
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Parser
+
+(defn shift [key parse]
+  (cons (get lexicon key) parse))
+
+
+(defn redüc [parse]
+  (let [[alpha beta & rest] parse]
+    (cond (applicable? alpha beta) (cons (appli alpha beta)   rest)
+          (composable? alpha beta) (cons (compose alpha beta) rest)
+          :else parse)))
+
+
+(defn parse [token parse]
+  (let [parse' (shift token parse)]
+      (println parse')
+    (redüc parse')))
+
+
+(defn batch-parse [str]
+  (let [token-list (map #(keyword %) (str/split str #" "))]
+    (println "Tokens:" token-list)
+    (loop [[token & rest] token-list parz nil]
+      (println ">> " parz)
+        (if (nil? token) parz
+          (recur rest (parse token parz))))))
