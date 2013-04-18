@@ -65,7 +65,7 @@
   "Calcuate the probability of an observation given the parameters of a
    multi-variate Gaussian."
   [obs mean cov]
-  (let [n (length obs)
+  (let [n (count obs)
         norm (minus obs mean)]
     (exp (mult -1/2 (mmult (trans norm) (solve cov) norm)))))
 
@@ -201,7 +201,7 @@
   "Select num random vectors in the given feature list to use as initial
   values for the codebook vectors."
   [n feature-list]
-  (let [max (dec (length feature-list))]
+  (let [max (dec (count feature-list))]
     (take n (repeatedly #(nth feature-list (Math/round (* (Math/random) max)))))))
 
 (defn init-codebook [n feature-list]
@@ -232,7 +232,7 @@
   [cb-vector]
   (into {}
         (for [cb cb-vector]
-          (let [normalizing-factor (/ 1.0 (length (val cb)))
+          (let [normalizing-factor (/ 1.0 (count (val cb)))
                 unadjsted-u (reduce plus (val cb))]
             {(vec (mult normalizing-factor unadjsted-u)) nil}))))
 
@@ -249,13 +249,13 @@
 (defn vector-mean
   "Calculate the mean vecotr of a set of vectors."
   [vectors]
-  (map (partial * (/ 1.0 (length vectors)))
+  (map (partial * (/ 1.0 (count vectors)))
        (reduce plus vectors)))
 
 (defn vector-covariance
   "Given a mean vector and a list of vectors, compute the covariance."
   [mean features]
-  (let [dim (length (first features))
+  (let [dim (count (first features))
         flat (for [x (range dim)
                    y (range dim)]
                (let [ex (nth mean x)
@@ -264,7 +264,7 @@
                      ys (map #(nth % y) features)
                      raw (mult (map (fn [x] (- x ex)) xs)
                                (map (fn [y] (- y ey)) ys))]
-                 (/ (apply + raw) (length raw))))]
+                 (/ (apply + raw) (count raw))))]
     (matrix flat dim)))
 
 (defn extract-mixture-model
@@ -275,33 +275,33 @@
 
   TODO: Extend ---  Currently only creates GMM of a single mixture component. "
   [cb-map]
-  (let [weight (/ 1.0 (length cb-map))
+  (let [weight (/ 1.0 (count cb-map))
         [mean features] (first cb-map)]
     (map->GaussMixture {:weight weight :mean mean
                         :covariance (vector-covariance mean features)})))
 
 (defn baum-welch [codebooks feature-list]
-  (let [num-states (length codebooks)]))
+  (let [num-states (count codebooks)]))
 
 (defn partition-into
   "Partions multiple collections simulataenously and combine the same
   partition position in each collection"
   [num coll]
-  (let [partitions (map #(partition (int (/ (length %) num)) %) coll)]
-    (for [i (range (length (first partitions)))]
+  (let [partitions (map #(partition (int (/ (count %) num)) %) coll)]
+    (for [i (range (count (first partitions)))]
       (mapcat #(nth % i) partitions))))
 
 
 (defn train-hmm
   "Given a phrase and a list of feature vectors, train a HMM."
   [word-str features & {:keys [num-states] :or {num-states 5}}]
-  (let [feat-per-state (int (/ (length features) num-states))]
+  (let [feat-per-state (int (/ (count features) num-states))]
     (map->HMM
      {:output word-str
       :states num-states
       :init-prob  (vec (cons 1.0 (take (dec num-states) (repeatedly (fn [] 0.0)))))
       :trans-prob (matrix (for [x (range num-states) y (range num-states)] (if (or (= x y) (= x (dec y))) 0.5 0.0)) num-states)
-      :emit-prob (map #(-> % vector-quantization extract-mixture-model) (partition-flat feat-per-state features))})))
+      :emit-prob (map #(-> % vector-quantization extract-mixture-model) (partition-into feat-per-state features))})))
 
 
 

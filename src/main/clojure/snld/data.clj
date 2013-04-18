@@ -1,5 +1,6 @@
 (ns ^{:doc ""
-      :author "Jeremiah Via <jeremiah.via@gmail.com>"} snld.data)
+      :author "Jeremiah Via <jeremiah.via@gmail.com>"}
+  snld.data)
 
 
 (defn noisify [vector & {:keys [range copies]
@@ -14,8 +15,8 @@
   {correct1 list1 ... correctN listN}, where correctN is the keyword
   and the lists are lists of strings."
   [input]
-  (let [total-len (length (mapcat val input))
-        total-correct (apply + (map (fn [e] (length (filter #(= (key e) %) (val e)))) input))]
+  (let [total-len (count (mapcat val input))
+        total-correct (apply + (map (fn [e] (count (filter #(= (key e) %) (val e)))) input))]
     (/ total-correct total-len)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -16,19 +16,16 @@
 (def ^:dynamic *parse*)
 
 
-;; Implement the CCG parser from class
-;; http://www.aclweb.org/aclwiki/index.php?title=Combinatory_Categorial_Grammar
-(defn app-fore [a b]
-  )
-(defn app-back [a b]
-  )
-(defn comp-fore [a b]
-  )
-(defn comp-back [a b]
-  )
-(defn type-fore [a b]
-  )
-(defn type-back [a b])
+(defn complex [dir take yield]
+  {:dir dir  :take take :yield yield})
+
+(defn atom? [token]
+  (= (type token) clojure.lang.Keyword))
+
+(defn complex? [token]
+  (or
+   (= (type token) clojure.lang.PersistentHashMap)
+   (= (type token) clojure.lang.PersistentArrayMap)))
 
 (def mappings
   {:ADJ (complex :left  :N :N)
@@ -43,7 +40,7 @@
    ;; Verbs
    :loves  (complex :right :NP (complex :left :NP :S))
    :made   (complex :right :NP (complex :left :NP :S))
-   :bit    
+   :bit    (complex :right :NP (complex :left :NP :S))
    ;; Pronoun
    :that   (complex :right :N :NP)
    ;; Nouns
@@ -55,51 +52,75 @@
    :stevie :NP
    :john   :NP})
 
-
-(defn complex [dir take yield]
-  {:dir dir  :take take :yield yield})
-
-(defn atom? [token]
-  (= (type token) clojure.lang.Keyword))
-
-(defn complex? [token]
-  (or
-   (= (type token) clojure.lang.PersistentHashMap)
-   (= (type token) clojure.lang.PersistentArrayMap)))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Application
-(defn- left-appli? [alpha beta]
-  (and (complex? beta)
-       (= (:dir beta) :left)
-       (= (:take beta) alpha)))
-
-(defn- right-appli? [alpha beta]
+(defn- appli-right?
+  "Determine if alpha can be right-applied to beta. This require that
+   alpha is a complex type and whose argument type matches beta's
+   type."
+  [alpha beta]
   (and (complex? alpha)
        (= (:dir alpha) :right)
        (= (:take alpha) beta)))
 
-(defn- left-appli [alpha beta]
-  (:yield beta))
 
-(defn- right-appli [alpha beta]
-  (:yield alpha))
+(defn- appli-left?
+  "Determine if beta can be left-applied to alpha. This require that
+   beta is a complex type and whose argument type matches alpha's
+   type."
+  [alpha beta]
+  (and (complex? beta)
+       (= (:dir beta) :left)
+       (= (:take beta) alpha)))
+
 
 (defn appli
   "Apply a lexical item with a functor type to an argument with an
   appropriate type."
   [alpha beta]
-  (cond (left-appli? alpha beta)  (left-appli alpha beta)
-        (right-appli? alpha beta) (right-appli alpha beta)))
+  (cond (appli-left? alpha beta)  (:yield beta)
+        (appli-right? alpha beta) (:yield alpha)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Composition 
+(defn- compose-right?
+  "Determine if right composition can occur. This requires: 
+   1) alpha and beta are functor types
+   2) both are right applied
+   3) beta yields the argument alpha accepts."
+  [alpha beta]
+  (and (complex? alpha) (complex? beta)
+       (= :right (:dir alpha) (:dir beta))
+       (= (:take alpha) (:yield beta))))
+
+
+(defn- compose-left?
+    "Determine if left composition can occur. This requires: 
+     1) alpha and beta are functor types
+     2) both are left applied
+     3) alpha yields the argument beta accepts."
+  [alpha beta]
+  (and (complex? alpha) (complex? beta)
+       (= :left (:dir alpha) (:dir beta))
+       (= (:take beta) (:yield alpha))))
+
 
 (defn compose
-  ""
-  [alpha beta])
+  "Compose two functors together, either using left or right composition."
+  [alpha beta]
+  (cond (compose-right? alpha beta) (complex :right (:take beta) (:yield alpha))
+        (compose-left? alpha beta)  (complex :left (:take alpha) (:yield beta))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Type Raise
+(defn type-raise-left? [alpha])
+
+
+(defn type-raise-right? [alpha])
 
 
 (defn type-raise
   ""
   [alpha beta])
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
