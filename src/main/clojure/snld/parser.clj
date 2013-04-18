@@ -114,13 +114,10 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Type Raise
-(defn type-raise-left? [alpha])
-
-
-(defn type-raise-right? [alpha])
-
 
 (defn type-raise
-  ""
-  [alpha beta])
+  "Performs right type-raising (succifient for incremental,
+  left-branching derivation?)"
+  [alpha]
+  (complex :right (complex :left alpha :T) :T))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
