@@ -316,5 +316,5 @@
         output {"red"   (map #(batch-recognize % hmms) (noisify red2-features   :range 3.0 :copies 400))
                 "green" (map #(batch-recognize % hmms) (noisify green2-features :range 3.0 :copies 400))
                 "white" (map #(batch-recognize % hmms) (noisify white1-features :range 3.0 :copies 400))}
-        stats (double (pc output))]
+        stats (double (percent-correct output))]
     (println "Percent correct: " stats)))
