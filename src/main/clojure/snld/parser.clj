@@ -13,8 +13,9 @@
       :author "Jeremiah Via <jeremiah.via@gmail.com>"}
   snld.parser
   (:require [clojure.string :as str]))
-
 (def ^:dynamic *parse*)
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data representation
@@ -79,10 +80,7 @@
 (defn beta-reduce [alpha beta]
   (when (reducible? alpha beta)
     (let [{var :var body :body} alpha]
-      (substitute var beta body)
-      #_(for [term body]
-        (cond (= var term) beta
-              (abstraction? term) (beta-reduce ))))))
+      (substitute var beta body))))
 
 (defn lambda->str [lambda]
   (letfn [(key->str [key] (subs (str key) 1))]
@@ -97,6 +95,8 @@
 
 
 (defn ccg->str [ccg]
+  (if (nil? ccg) nil)
+  
   (if (atom? ccg) (subs (str ccg) 1)
       (let [{take :take yield :yield dir :dir} ccg
             ret (if (atom? yield) (ccg->str yield) (str "(" (ccg->str yield) ")"))
@@ -120,11 +120,12 @@
     (and (= 1 (count S))
          (= :S (first S)))))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lexicon
 (def lexicon
   {;; determiners
-   :the     [{:syn (complex :right :N :NP)   :sem (lambda :P [:def :P])}
+   :the     [{:syn (complex :right :N :NP)  :sem (lambda :x [:def :x])}
              {:syn (complex :right :N (complex :right (complex :left :NP :S) :S))   :sem (lambda :P (lambda :Q [:Q :det :P]))}]
    ;; Nouns
    :doctor  [{:syn :N :sem (lambda :x [:doctor :x])}
