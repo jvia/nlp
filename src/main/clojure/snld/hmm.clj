@@ -1,6 +1,5 @@
 (ns snld.hmm
-  (:use [incanter core stats charts])
-  (:import org.apache.commons.math3.distribution.MultivariateNormalDistribution))
+  (:use [incanter core stats charts]))
 
 
 (defn gauss-pdf

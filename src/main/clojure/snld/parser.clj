@@ -33,6 +33,40 @@
    (= (type token) clojure.lang.PersistentArrayMap)))
 
 
+(defn lambda
+  "Create a lambda data structure. Use this to represent "
+  [var body]
+  {:var var :body body})
+
+(defn term?
+  "Using keywords as term."
+  [alpha]
+  (or (keyword? alpha)
+      (map? alpha)))
+
+(defn abstraction?
+  "Check if the given lambda-term is an abstraction."
+  [lambda-term]
+  (and (map? lambda-term)
+       (contains? lambda-term :var)
+       (contains? lambda-term :body)))
+
+(defn application?
+  "Can the two lambda terms be reduced."
+  [alpha beta]
+  (and (abstraction? alpha) (term? beta)))
+
+
+(defn beta-reduce [alpha beta])
+
+(defn lambda->str [lambda]
+  (letfn [(key->str [key] (subs (str key) 1))]
+    (cond (abstraction? lambda)
+          (str "λ" (key->str (:var lambda)) "." (lambda->str (:body lambda)))
+          (term? lambda) (key->str lambda)
+          :else (apply str (mapcat lambda->str lambda)))))
+
+
 (defn get-syntax [lexicon lex-entry]
   (get lexicon lex-entry))
 
@@ -55,30 +89,47 @@
   (doall (map #(println (key %) "=>" (ccg->str (val %))) lexicon))
   nil)
 
+(defn sentence? [S]
+  (if (atom? S)
+    (= :S S)
+    (and (= 1 (count S))
+         (= :S (first S)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lexicon
 
-(def mappings
-  {:ADJ (complex :left  :N :N)
-   :DET (complex :right :N :NP)
-   :NP :NP})
-
 (def lexicon
+  {:the     [(complex :right :N (complex :right (complex :left :NP :S) :S))
+             (complex :right :N :NP)]
+   :doctor  [:N
+             (complex :right (complex :left :N :N) :N)]
+   :flowers []
+   :patient []
+   :sent    []
+   :for     []
+   :arrived []})
+
+;; for debug
+;;(def theSem (-> lexicon :the first :semantics))
+;;(def docSem (-> lexicon :doctor first :semantics))
+
+
+(def simple-lexicon
   {;; Determiners
    :the    (complex :right :N :NP)
-   ;; {:word "the" :syntax (complex :right :N :NP) :semantics (fn [X] [:det x])}
    ;; Adjectives
    :bad    (complex :right :N :N)
    ;; Verbs
    :loves  (complex :right :NP (complex :left :NP :S))
    :made   (complex :right :NP (complex :left :NP :S))
    :bit    (complex :right :NP (complex :left :NP :S))
+   :madly  (complex :left (complex :left :NP :S) (complex :left :NP :S))
    ;; Pronoun
    :that   (complex :right :N :NP)
    ;; Nouns
    :boy    :N
    :mess   :N
-   :dog    :N
+   :dog    :Nx
    ;; Proper nouns
    :andie  :NP
    :stevie :NP
@@ -105,8 +156,10 @@
        (= (:dir beta) :left)
        (= (:take beta) alpha)))
 
+
 (defn- applicable? [alpha beta]
   (or (appli-left? alpha beta) (appli-right? alpha beta)))
+
 
 (defn appli
   "Apply a lexical item with a functor type to an argument with an
@@ -114,6 +167,13 @@
   [alpha beta]
   (cond (appli-left? alpha beta)  (:yield beta)
         (appli-right? alpha beta) (:yield alpha)))
+
+
+(defn beta-reduction [alpha beta]
+  ())
+
+(defn semantic-apply-left [alpha beta]
+  ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Composition 
@@ -129,7 +189,7 @@
 
 
 (defn- compose-left?
-    "Determine if left composition can occur. This requires: 
+  "Determine if left composition can occur. This requires: 
      1) alpha and beta are functor types
      2) both are left applied
      3) alpha yields the argument beta accepts."
@@ -166,26 +226,27 @@
 ;; Parser
 
 #_(defn shift [key parse]
-  (cons (get-syntax lexicon key) parse))
+    (cons (get-syntax lexicon key) parse))
 
 
 #_(defn redüc [parse]
-  (let [[alpha beta & rest] parse]
-    (filter (complement nil?)
-            [(cons (appli alpha beta) rest)
-             (cons (compose alpha beta) rest)
-             (cons (type-raise alpha) (cons beta rest))])))
+    (let [[alpha beta & rest] parse]
+      (filter (complement nil?)
+              [(cons (appli alpha beta) rest)
+               (cons (compose alpha beta) rest)
+               (cons (type-raise alpha) (cons beta rest))])))
 
 
 #_(defn parse [token parse]
-  (let [parse' (map #(shift token %) parse)]
-    (mapcat redüc parse')))
+    (let [parse' (map #(shift token %) parse)]
+      (mapcat redüc parse')))
+
 
 #_(defn batch-parse [str]
-  (let [token-list (map #(keyword %) (str/split str #" "))]
-    (println "Tokens:" token-list)
-    (loop [[token & rest] token-list parz nil]
-      (println parz)
-      (println "--------------")
+    (let [token-list (map #(keyword %) (str/split str #" "))]
+      (println "Tokens:" token-list)
+      (loop [[token & rest] token-list parz nil]
+        (println parz)
+        (println "--------------")
         (if (nil? token) parz
-          (recur rest (parse token parz))))))
+            (recur rest (parse token parz))))))
