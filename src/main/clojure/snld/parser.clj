@@ -51,21 +51,46 @@
        (contains? lambda-term :var)
        (contains? lambda-term :body)))
 
-(defn application?
+(defn reducible?
   "Can the two lambda terms be reduced."
   [alpha beta]
   (and (abstraction? alpha) (term? beta)))
 
 
-(defn beta-reduce [alpha beta])
+(defn free?
+  "Determine if the given var is free in this term. "
+  [var term]
+  (if (not (abstraction? term)) true)
+  (if (and (abstraction? term) (= var (:var term))) false))
+
+(defn substitute
+  ([var val terms]
+     (substitute var val terms nil))
+  ([var val terms bounded]
+     (letfn [(substitutible? [term]
+               (and (= var term) (not (some #(= % var) bounded))))]
+       (for [term terms]
+         (cond (substitutible? term) val
+               (abstraction? term) (lambda (:var term)
+                                           (substitute var val (:body term)
+                                                       (cons (:var term) bounded)))
+               :else term)))))
+
+(defn beta-reduce [alpha beta]
+  (when (reducible? alpha beta)
+    (let [{var :var body :body} alpha]
+      (substitute var beta body)
+      #_(for [term body]
+        (cond (= var term) beta
+              (abstraction? term) (beta-reduce ))))))
 
 (defn lambda->str [lambda]
   (letfn [(key->str [key] (subs (str key) 1))]
     (cond (abstraction? lambda)
-          (str "λ" (key->str (:var lambda)) "." (lambda->str (:body lambda)))
+          (str "(λ" (key->str (:var lambda)) "." (lambda->str (:body lambda)) ")")
           (term? lambda) (key->str lambda)
-          :else (apply str (mapcat lambda->str lambda)))))
-
+          :else (apply str (interpose " " (map lambda->str lambda))))))
+ 
 
 (defn get-syntax [lexicon lex-entry]
   (get lexicon lex-entry))
@@ -97,43 +122,24 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lexicon
-
 (def lexicon
-  {:the     [(complex :right :N (complex :right (complex :left :NP :S) :S))
-             (complex :right :N :NP)]
-   :doctor  [:N
-             (complex :right (complex :left :N :N) :N)]
-   :flowers []
-   :patient []
-   :sent    []
-   :for     []
-   :arrived []})
-
-;; for debug
-;;(def theSem (-> lexicon :the first :semantics))
-;;(def docSem (-> lexicon :doctor first :semantics))
-
-
-(def simple-lexicon
-  {;; Determiners
-   :the    (complex :right :N :NP)
-   ;; Adjectives
-   :bad    (complex :right :N :N)
-   ;; Verbs
-   :loves  (complex :right :NP (complex :left :NP :S))
-   :made   (complex :right :NP (complex :left :NP :S))
-   :bit    (complex :right :NP (complex :left :NP :S))
-   :madly  (complex :left (complex :left :NP :S) (complex :left :NP :S))
-   ;; Pronoun
-   :that   (complex :right :N :NP)
+  {;; determiners
+   :the     [{:syn (complex :right :N :NP)   :sem (lambda :P [:def :P])}
+             {:syn (complex :right :N (complex :right (complex :left :NP :S) :S))   :sem (lambda :P (lambda :Q [:Q :det :P]))}]
    ;; Nouns
-   :boy    :N
-   :mess   :N
-   :dog    :Nx
-   ;; Proper nouns
-   :andie  :NP
-   :stevie :NP
-   :john   :NP})
+   :doctor  [{:syn :N :sem (lambda :x [:doctor :x])}
+             {:syn (complex :right (complex :left :N :N) :N) :sem (lambda :Q (lambda :x [:Q :doctor :x]))}]
+   :flowers [{:syn :N :sem (lambda :x [:flowers :x])}
+             {:syn (complex :right (complex :left :N :N) :N) :sem (lambda :Q (lambda :x [:Q :flowers :x]))}]
+   :patient [{:syn :N :sem (lambda :x [:patient :x])}
+             {:syn (complex :right (complex :left :N :N) :N) :sem (lambda :Q (lambda :x [:Q :patient :x]))}]
+   ;; Verbs
+   :sent    [{:syn (complex :right :PP (complex :left :NP :S)) :sem (lambda :x (lambda :y [:summon :x :y]))}
+             {:syn (complex :right :PP (complex :left :N :N)) :sem (lambda :z (lambda :P (lambda :y [:P :y :and :send :z :y :sb])))}]
+   :arrived [{:syn (complex :left :NP :S) :sem (lambda :x [:arrive :x])}]
+   ;; Preporistions
+   :for     [{:syn (complex :right :NP :PP) :sem (lambda :x [:x])}]})
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Application
