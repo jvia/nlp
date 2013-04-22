@@ -109,11 +109,6 @@
 (defn pprint-ccg [ccg]
   (println (ccg->str ccg)))
 
-
-(defn pprint-lexicon [lexicon]
-  (doall (map #(println (key %) "=>" (ccg->str (val %))) lexicon))
-  nil)
-
 (defn sentence? [S]
   (if (atom? S)
     (= :S S)
@@ -121,6 +116,15 @@
          (= :S (first S)))))
 
 
+(defn pprint-lex-item [item]
+  (println (ccg->str (:syn item)) "::" (lambda->str (:sem item))))
+
+(defn pprint-lexicon [lexicon]
+  (doall
+   (for [lex lexicon]
+     (doall 
+      (for [entry (val lex)]
+        (println (key lex) "=" (ccg->str (:syn entry)) "::" (lambda->str (:sem entry))))))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lexicon
 (def lexicon
@@ -175,13 +179,6 @@
   (cond (appli-right? alpha beta) {:syn (:yield syn-a)  :sem (beta-reduce sem-a sem-b)}
         (appli-left? alpha beta)  {:syn (:yield syn-b)  :sem (beta-reduce sem-b sem-a)}))
 
-
-(defn beta-reduction [alpha beta]
-  ())
-
-(defn semantic-apply-left [alpha beta]
-  ())
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Composition 
 (defn- compose-right?
@@ -189,7 +186,7 @@
    1) alpha and beta are functor types
    2) both are right applied
    3) beta yields the argument alpha accepts."
-  [alpha beta]
+  [{alpha :syn} {beta :syn}]
   (and (complex? alpha) (complex? beta)
        (= :right (:dir alpha) (:dir beta))
        (= (:take alpha) (:yield beta))))
@@ -200,7 +197,7 @@
      1) alpha and beta are functor types
      2) both are left applied
      3) alpha yields the argument beta accepts."
-  [alpha beta]
+  [{alpha :syn} {beta :syn}]
   (and (complex? alpha) (complex? beta)
        (= :left (:dir alpha) (:dir beta))
        (= (:take beta) (:yield alpha))))
