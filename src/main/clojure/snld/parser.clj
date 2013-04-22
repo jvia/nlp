@@ -148,7 +148,7 @@
   "Determine if alpha can be right-applied to beta. This require that
    alpha is a complex type and whose argument type matches beta's
    type."
-  [alpha beta]
+  [{alpha :syn} {beta :syn}]
   (and (complex? alpha)
        (= (:dir alpha) :right)
        (= (:take alpha) beta)))
@@ -158,7 +158,7 @@
   "Determine if beta can be left-applied to alpha. This require that
    beta is a complex type and whose argument type matches alpha's
    type."
-  [alpha beta]
+  [{alpha :syn} {beta :syn}]
   (and (complex? beta)
        (= (:dir beta) :left)
        (= (:take beta) alpha)))
@@ -171,9 +171,9 @@
 (defn appli
   "Apply a lexical item with a functor type to an argument with an
   appropriate type."
-  [alpha beta]
-  (cond (appli-left? alpha beta)  (:yield beta)
-        (appli-right? alpha beta) (:yield alpha)))
+  [{syn-a :syn sem-a :sem :as alpha} {syn-b :syn sem-b :sem :as beta}]
+  (cond (appli-right? alpha beta) {:syn (:yield syn-a)  :sem (beta-reduce sem-a sem-b)}
+        (appli-left? alpha beta)  {:syn (:yield syn-b)  :sem (beta-reduce sem-b sem-a)}))
 
 
 (defn beta-reduction [alpha beta]
