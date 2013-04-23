@@ -125,6 +125,7 @@
      (doall 
       (for [entry (val lex)]
         (println (key lex) "=" (ccg->str (:syn entry)) "::" (lambda->str (:sem entry))))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lexicon
 (def lexicon
@@ -209,9 +210,10 @@
 
 (defn compose
   "Compose two functors together, either using left or right composition."
-  [alpha beta]
-  (cond (compose-right? alpha beta) (complex :right (:take beta) (:yield alpha))
-        (compose-left? alpha beta)  (complex :left (:take alpha) (:yield beta))))
+  [{syn-a :syn sem-a :sem :as alpha} {syn-b :syn sem-b :sem :as beta}]
+  (println syn-a syn-b)
+  (cond (compose-left? alpha beta)  (complex :left (:take syn-a) (:yield syn-b))
+        (compose-right? alpha beta) (complex :right (:take syn-b) (:yield syn-a))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

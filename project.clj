@@ -5,6 +5,7 @@
                  [incanter "1.4.1"]
                  [org.clojure/core.logic "0.8.3"]
                  [org.clojure/core.unify "0.5.5"]
+                 [org.clojure/core.match "0.2.0-alpha12"]
                  [net.sourceforge.jtransforms/jtransforms "2.4.0"]
                  [edu.cmu.sphinx/sphinx4 "1.0-beta6"]
                  [com.taoensso/timbre "1.5.2"]

@@ -1,35 +1,36 @@
 (ns snld.parser-test
   (:use midje.sweet snld.parser))
 
+(def lex
+  {;; determiners
+   :the     [{:syn (complex :right :N :NP)  :sem (lambda :x [:def :x])}
+             {:syn (complex :right :N (complex :right (complex :left :NP :S) :S))   :sem (lambda :P (lambda :Q [:Q :det :P]))}]
+   ;; Nouns
+   :doctor  [{:syn :N :sem (lambda :x [:doctor :x])}
+             {:syn (complex :right (complex :left :N :N) :N) :sem (lambda :Q (lambda :x [:Q :doctor :x]))}]
+   :flowers [{:syn :N :sem (lambda :x [:flowers :x])}
+             {:syn (complex :right (complex :left :N :N) :N) :sem (lambda :Q (lambda :x [:Q :flowers :x]))}]
+   :patient [{:syn :N :sem (lambda :x [:patient :x])}
+             {:syn (complex :right (complex :left :N :N) :N) :sem (lambda :Q (lambda :x [:Q :patient :x]))}]
+   ;; Verbs
+   :sent    [{:syn (complex :right :PP (complex :left :NP :S)) :sem (lambda :x (lambda :y [:summon :x :y]))}
+             {:syn (complex :right :PP (complex :left :N :N)) :sem (lambda :z (lambda :P (lambda :y [:P :y :and :send :z :y :sb])))}]
+   :arrived [{:syn (complex :left :NP :S) :sem (lambda :x [:arrive :x])}]
+   ;; Preporistions
+   :for     [{:syn (complex :right :NP :PP) :sem (lambda :x [:x])}]})
+
 
 (facts "about CCG"
+       (facts "about forward application"
+              (fact (appli (-> lex :the first) (-> lex :doctor first))   => {:syn :NP :sem [:def (lambda :x [:doctor :x])]}))
+       (facts "about backward application")
+       (facts "about forward composition")
+       (facts "about backward composition")
        (fact "right composition"
-             (compose (complex :right (complex :left :NP :S) :S)
-                      (complex :right :NP (complex :left :NP :S))) => (complex :right :NP :S))
+             (compose {:syn (complex :right (complex :left :NP :S) :S)}
+                      {:syn (complex :right :NP (complex :left :NP :S))}) => (complex :right :NP :S))
        (fact "left composition"
-             (compose (complex :left :Z :Y) (complex :left :Y :X)) => (complex :left :Z :X)))
+             (compose {:syn (complex :left :Z :Y)} {:syn (complex :left :Y :X)}) => (complex :left :Z :X)))
 
 
-(facts "about application")
 
-(facts "about type-raising")
-
-
-(facts "about lambda-calculus"
-       (fact "lambda function creates simple λ data structure"
-             (lambda :x [:def :x]) => {:var :x :body [:def :x]}
-             (lambda :x (lambda :y [:pred :x :y])) => {:var :x :body {:var :y :body [:pred :x :y]}})
-       (fact "A lambda term is the basic unit. Simply some variable. We use keywords as terms."
-             (term? :x) => true
-             (term? 'x) => false
-             (term? (lambda :x [:det :x])) => true)
-       (fact "An abstraction is a lambda term with a functional symbol"
-             (abstraction? :x)  => false
-             (abstraction? (lambda :x [:det :x])) => true)
-       (fact "Beta reduction applies an abstraction alpha to a term beta"
-             (beta-reduce (lambda :x [:x]) :y) => [:y]
-             (beta-reduce (lambda :x [(lambda :y [:y])]) :a) => [(lambda :y [:y])]
-             (beta-reduce (lambda :x [:x (lambda :x [:x])]) :Q) => [:Q (lambda :x [:x])])
-       (fact "String representations are much easier to read"
-             (lambda->str (lambda :x [:x]))  => "(λx.x)" 
-             (lambda->str (lambda :x [:x (lambda :x [:x])])) => "(λx.x (λx.x))" ))
