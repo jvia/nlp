@@ -59,27 +59,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lexicon
 
-(def ^{:private true}
-  the1 (complex :right :N :NP))
-(def ^{:private true}
-  the2 (complex :right :N (complex :right (complex :left :NP :S) :S)))
-(def ^{:private true}
-  doctor1 :N)
-(def ^{:private true}
-  doctor2 (complex :right (complex :left :N :N) :N))
-(def ^{:private true}
-  patient1 :N)
-(def ^{:private true}
-  patient2 (complex :right (complex :left :N :N) :N))
-(def ^{:private true}
-  sent1 (complex :right :PP (complex :left :NP :S)))
-(def ^{:private true}
-  sent2 (complex :right :PP (complex :left :N :N)))
-(def ^{:private true}
-  arrived (complex :left :NP :S))
-(def ^{:private true}
-  for_w (complex :right :NP :PP))
-
 (def lexicon
   {;; determiners
    :the     [(complex :right :N :NP) (complex :right :N (complex :right (complex :left :NP :S) :S))]
@@ -89,6 +68,8 @@
    :patient [:N (complex :right (complex :left :N :N) :N)]
    ;; Verbs
    :sent    [(complex :right :PP (complex :left :NP :S))
+             (complex :right :PP (complex :left :N :N))]
+   :loves   [(complex :right :PP (complex :left :NP :S))
              (complex :right :PP (complex :left :N :N))]
    :arrived [(complex :left :NP :S)]
    ;; Preposistions
@@ -192,7 +173,7 @@
       (for [entry entries] [entry])
       (for [entry entries
             stack stacks]
-        (cons entry stack)))))
+        (conj stack entry)))))
 
 
 (defn ccg-reduce
@@ -203,9 +184,9 @@
     stacks
     (filter good-stack?
             (concat (map (fn [stack]
-                           [(appli   (second stack) (first stack))]) stacks)
+                           [(appli   (first stack) (second stack))]) stacks)
                     (map (fn [stack]
-                           [(compose (second stack) (first stack))]) stacks)))))
+                           [(compose (first stack) (second stack))]) stacks)))))
 
 
 (defn parse [token stacks lexicon]
