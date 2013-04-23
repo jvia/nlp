@@ -177,6 +177,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parser
+(defn stacks->str [stacks]
+  (map #(map ccg->str %) stacks))
+
+(defn pprint-stacks [stacks]
+  (doall (println (stacks->str stacks))))
+
 (defn good-stack? [stack]
   (not (some nil? stack)))
 
@@ -206,11 +212,23 @@
   (ccg-reduce (shift token stacks lexicon)))
 
 
-(defn batch-parse [str]
-  (let [token-list (map #(keyword %) (str/split str #" "))]
-    (println "Tokens:" token-list)
-    (loop [[token & rest] token-list parz nil]
-      (doall (println (map #(map ccg->str %) parz)))
-      (println "--------------")
-      (if (nil? token) parz
-          (recur rest (parse token parz lexicon))))))
+(defn batch-parse
+  ([str] (batch-parse str lexicon))
+  ([str lexicon]
+     (let [token-list (map #(keyword %) (str/split str #" "))]
+       (println "Tokens:" token-list)
+       (loop [[token & rest] token-list stacks nil]
+         (if (nil? token)
+           (do (println "-----------------------------")
+               (println "Final stacks")
+               (pprint-stacks stacks)
+               stacks)
+           (do (let [shift (shift token stacks lexicon)
+                     reduce (ccg-reduce shift)]
+                 (do (println "-----------------------------")
+                     (println "Shift")
+                     (pprint-stacks shift)
+                     (println "-----------------------------")
+                     (println "Reduce")
+                     (pprint-stacks reduce))
+                 (recur rest reduce))))))))
