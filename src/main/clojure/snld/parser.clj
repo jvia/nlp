@@ -34,65 +34,6 @@
    (= (type token) clojure.lang.PersistentArrayMap)))
 
 
-(defn lambda
-  "Create a lambda data structure. Use this to represent "
-  [var body]
-  {:var var :body body})
-
-(defn term?
-  "Using keywords as term."
-  [alpha]
-  (or (keyword? alpha)
-      (map? alpha)))
-
-(defn abstraction?
-  "Check if the given lambda-term is an abstraction."
-  [lambda-term]
-  (and (map? lambda-term)
-       (contains? lambda-term :var)
-       (contains? lambda-term :body)))
-
-(defn reducible?
-  "Can the two lambda terms be reduced."
-  [alpha beta]
-  (and (abstraction? alpha) (term? beta)))
-
-
-(defn free?
-  "Determine if the given var is free in this term. "
-  [var term]
-  (if (not (abstraction? term)) true)
-  (if (and (abstraction? term) (= var (:var term))) false))
-
-(defn substitute
-  ([var val terms]
-     (substitute var val terms nil))
-  ([var val terms bounded]
-     (letfn [(substitutible? [term]
-               (and (= var term) (not (some #(= % var) bounded))))]
-       (for [term terms]
-         (cond (substitutible? term) val
-               (abstraction? term) (lambda (:var term)
-                                           (substitute var val (:body term)
-                                                       (cons (:var term) bounded)))
-               :else term)))))
-
-(defn beta-reduce [alpha beta]
-  (when (reducible? alpha beta)
-    (let [{var :var body :body} alpha]
-      (substitute var beta body))))
-
-(defn lambda->str [lambda]
-  (letfn [(key->str [key] (subs (str key) 1))]
-    (cond (abstraction? lambda)
-          (str "(λ" (key->str (:var lambda)) "." (lambda->str (:body lambda)) ")")
-          (term? lambda) (key->str lambda)
-          :else (apply str (interpose " " (map lambda->str lambda))))))
- 
-
-(defn get-syntax [lexicon lex-entry]
-  (get lexicon lex-entry))
-
 
 (defn ccg->str [ccg]
   (if (nil? ccg) nil)
@@ -115,36 +56,43 @@
     (and (= 1 (count S))
          (= :S (first S)))))
 
-
-(defn pprint-lex-item [item]
-  (println (ccg->str (:syn item)) "::" (lambda->str (:sem item))))
-
-(defn pprint-lexicon [lexicon]
-  (doall
-   (for [lex lexicon]
-     (doall 
-      (for [entry (val lex)]
-        (println (key lex) "=" (ccg->str (:syn entry)) "::" (lambda->str (:sem entry))))))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lexicon
+
+(def ^{:private true}
+  the1 (complex :right :N :NP))
+(def ^{:private true}
+  the2 (complex :right :N (complex :right (complex :left :NP :S) :S)))
+(def ^{:private true}
+  doctor1 :N)
+(def ^{:private true}
+  doctor2 (complex :right (complex :left :N :N) :N))
+(def ^{:private true}
+  patient1 :N)
+(def ^{:private true}
+  patient2 (complex :right (complex :left :N :N) :N))
+(def ^{:private true}
+  sent1 (complex :right :PP (complex :left :NP :S)))
+(def ^{:private true}
+  sent2 (complex :right :PP (complex :left :N :N)))
+(def ^{:private true}
+  arrived (complex :left :NP :S))
+(def ^{:private true}
+  for_w (complex :right :NP :PP))
+
 (def lexicon
   {;; determiners
-   :the     [{:syn (complex :right :N :NP)  :sem (lambda :x [:def :x])}
-             {:syn (complex :right :N (complex :right (complex :left :NP :S) :S))   :sem (lambda :P (lambda :Q [:Q :det :P]))}]
+   :the     [(complex :right :N :NP) (complex :right :N (complex :right (complex :left :NP :S) :S))]
    ;; Nouns
-   :doctor  [{:syn :N :sem (lambda :x [:doctor :x])}
-             {:syn (complex :right (complex :left :N :N) :N) :sem (lambda :Q (lambda :x [:Q :doctor :x]))}]
-   :flowers [{:syn :N :sem (lambda :x [:flowers :x])}
-             {:syn (complex :right (complex :left :N :N) :N) :sem (lambda :Q (lambda :x [:Q :flowers :x]))}]
-   :patient [{:syn :N :sem (lambda :x [:patient :x])}
-             {:syn (complex :right (complex :left :N :N) :N) :sem (lambda :Q (lambda :x [:Q :patient :x]))}]
+   :doctor  [:N (complex :right (complex :left :N :N) :N)]
+   :flowers [:N (complex :right (complex :left :N :N) :N)]
+   :patient [:N (complex :right (complex :left :N :N) :N)]
    ;; Verbs
-   :sent    [{:syn (complex :right :PP (complex :left :NP :S)) :sem (lambda :x (lambda :y [:summon :x :y]))}
-             {:syn (complex :right :PP (complex :left :N :N)) :sem (lambda :z (lambda :P (lambda :y [:P :y :and :send :z :y :sb])))}]
-   :arrived [{:syn (complex :left :NP :S) :sem (lambda :x [:arrive :x])}]
-   ;; Preporistions
-   :for     [{:syn (complex :right :NP :PP) :sem (lambda :x [:x])}]})
+   :sent    [(complex :right :PP (complex :left :NP :S))
+             (complex :right :PP (complex :left :N :N))]
+   :arrived [(complex :left :NP :S)]
+   ;; Preposistions
+   :for     [(complex :right :NP :PP)]})
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -153,7 +101,7 @@
   "Determine if alpha can be right-applied to beta. This require that
    alpha is a complex type and whose argument type matches beta's
    type."
-  [{alpha :syn} {beta :syn}]
+  [alpha beta]
   (and (complex? alpha)
        (= (:dir alpha) :right)
        (= (:take alpha) beta)))
@@ -163,7 +111,7 @@
   "Determine if beta can be left-applied to alpha. This require that
    beta is a complex type and whose argument type matches alpha's
    type."
-  [{alpha :syn} {beta :syn}]
+  [alpha beta]
   (and (complex? beta)
        (= (:dir beta) :left)
        (= (:take beta) alpha)))
@@ -176,9 +124,9 @@
 (defn appli
   "Apply a lexical item with a functor type to an argument with an
   appropriate type."
-  [{syn-a :syn sem-a :sem :as alpha} {syn-b :syn sem-b :sem :as beta}]
-  (cond (appli-right? alpha beta) {:syn (:yield syn-a)  :sem (beta-reduce sem-a sem-b)}
-        (appli-left? alpha beta)  {:syn (:yield syn-b)  :sem (beta-reduce sem-b sem-a)}))
+  [alpha beta]
+  (cond (appli-right? alpha beta)(:yield alpha)
+        (appli-left? alpha beta) (:yield beta)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Composition 
@@ -187,7 +135,7 @@
    1) alpha and beta are functor types
    2) both are right applied
    3) beta yields the argument alpha accepts."
-  [{alpha :syn} {beta :syn}]
+  [alpha beta]
   (and (complex? alpha) (complex? beta)
        (= :right (:dir alpha) (:dir beta))
        (= (:take alpha) (:yield beta))))
@@ -198,7 +146,7 @@
      1) alpha and beta are functor types
      2) both are left applied
      3) alpha yields the argument beta accepts."
-  [{alpha :syn} {beta :syn}]
+  [alpha beta]
   (and (complex? alpha) (complex? beta)
        (= :left (:dir alpha) (:dir beta))
        (= (:take beta) (:yield alpha))))
@@ -210,10 +158,9 @@
 
 (defn compose
   "Compose two functors together, either using left or right composition."
-  [{syn-a :syn sem-a :sem :as alpha} {syn-b :syn sem-b :sem :as beta}]
-  (println syn-a syn-b)
-  (cond (compose-left? alpha beta)  (complex :left (:take syn-a) (:yield syn-b))
-        (compose-right? alpha beta) (complex :right (:take syn-b) (:yield syn-a))))
+  [alpha beta]
+  (cond (compose-left? alpha beta)  (complex :left (:take alpha) (:yield alpha))
+        (compose-right? alpha beta) (complex :right (:take beta) (:yield beta))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -230,29 +177,40 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parser
+(defn good-stack? [stack]
+  (not (some nil? stack)))
 
-#_(defn shift [key parse]
-    (cons (get-syntax lexicon key) parse))
-
-
-#_(defn redüc [parse]
-    (let [[alpha beta & rest] parse]
-      (filter (complement nil?)
-              [(cons (appli alpha beta) rest)
-               (cons (compose alpha beta) rest)
-               (cons (type-raise alpha) (cons beta rest))])))
-
-
-#_(defn parse [token parse]
-    (let [parse' (map #(shift token %) parse)]
-      (mapcat redüc parse')))
+(defn shift [key stacks lexicon]
+  (let [entries (get lexicon key)]
+    (if (nil? stacks)
+      (for [entry entries] [entry])
+      (for [entry entries
+            stack stacks]
+        (cons entry stack)))))
 
 
-#_(defn batch-parse [str]
-    (let [token-list (map #(keyword %) (str/split str #" "))]
-      (println "Tokens:" token-list)
-      (loop [[token & rest] token-list parz nil]
-        (println parz)
-        (println "--------------")
-        (if (nil? token) parz
-            (recur rest (parse token parz))))))
+(defn ccg-reduce
+  "Perform reduction unless all the stacks are of size 1, meaning only
+  one token has been seen."
+  [stacks]
+  (if (= (count stacks) (reduce + (map count stacks)))
+    stacks
+    (filter good-stack?
+            (concat (map (fn [stack]
+                           [(appli   (second stack) (first stack))]) stacks)
+                    (map (fn [stack]
+                           [(compose (second stack) (first stack))]) stacks)))))
+
+
+(defn parse [token stacks lexicon]
+  (ccg-reduce (shift token stacks lexicon)))
+
+
+(defn batch-parse [str]
+  (let [token-list (map #(keyword %) (str/split str #" "))]
+    (println "Tokens:" token-list)
+    (loop [[token & rest] token-list parz nil]
+      (doall (println (map #(map ccg->str %) parz)))
+      (println "--------------")
+      (if (nil? token) parz
+          (recur rest (parse token parz lexicon))))))
