@@ -36,15 +36,15 @@
 
 
 (defn ccg->str [ccg]
-  (if (nil? ccg) nil)
-  
-  (if (atom? ccg) (subs (str ccg) 1)
-      (let [{take :take yield :yield dir :dir} ccg
-            ret (if (atom? yield) (ccg->str yield) (str "(" (ccg->str yield) ")"))
-            arg (if (atom? take)  (ccg->str take)  (str "(" (ccg->str take) ")"))]
-        (str ret
-             (if (= :right dir) "/" "\\")
-             arg))))
+  (cond (nil? ccg) nil
+        (atom? ccg) (subs (str ccg) 1)
+        :else
+        (let [{take :take yield :yield dir :dir} ccg
+              ret (if (atom? yield) (ccg->str yield) (str "(" (ccg->str yield) ")"))
+              arg (if (atom? take)  (ccg->str take)  (str "(" (ccg->str take) ")"))]
+          (str ret
+               (if (= :right dir) "/" "\\")
+               arg))))
 
 
 (defn pprint-ccg [ccg]
@@ -59,6 +59,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lexicon
 
+
 (def lexicon
   {;; determiners
    :the     [(complex :right :N :NP) (complex :right :N (complex :right (complex :left :NP :S) :S))]
@@ -66,11 +67,17 @@
    :doctor  [:N (complex :right (complex :left :N :N) :N)]
    :flowers [:N (complex :right (complex :left :N :N) :N)]
    :patient [:N (complex :right (complex :left :N :N) :N)]
+   ;; Noun phrases
+   :andie   [:NP (complex :right (complex :left :NP :S) :S)]
+   :steve   [:NP (complex :right (complex :left :NP :S) :S)]
    ;; Verbs
    :sent    [(complex :right :PP (complex :left :NP :S))
              (complex :right :PP (complex :left :N :N))]
    :loves   [(complex :right :PP (complex :left :NP :S))
-             (complex :right :PP (complex :left :N :N))]
+             (complex :right :PP (complex :left :N :N))
+             (complex :right :NP (complex :right (complex :left (complex :left :NP :S) (complex :left :NP :S)) (complex :left :NP :S)))] ;;
+   ;; Adverb
+   :madly    [(complex :right (complex :left :NP :S) (complex :left :NP :S))]
    :arrived [(complex :left :NP :S)]
    ;; Preposistions
    :for     [(complex :right :NP :PP)]})
@@ -147,14 +154,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Type Raise
 
-(defn type-raise
+(defn forward-type-raise
   "Performs right type-raising (succifient for incremental,
   left-branching derivation?)"
   ;; TODO move from automatic sentence construction to abstract types
   [alpha]
-  (complex :right (complex :left alpha :S) :S))
+  (when (atom? alpha)
+    (complex :right (complex :left alpha :T) :T)))
+
+(defn backward-type-raise
+  [alpha]
+  (when (atom? alpha)
+    (complex :left (complex :right alpha :T) :T)))
 
 
+(defn unify
+  ""
+  [alpha beta])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parser
@@ -207,7 +223,7 @@
            (do (let [shift (shift token stacks lexicon)
                      reduce (ccg-reduce shift)]
                  (do (println "-----------------------------")
-                     (println "Shift")
+                     (println "Shift:" token)
                      (pprint-stacks shift)
                      (println "-----------------------------")
                      (println "Reduce")
