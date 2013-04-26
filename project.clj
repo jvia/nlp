@@ -12,8 +12,9 @@
                  [midje "1.5.1"]]
   :repositories [["nexus" {:url "http://repository.ow2.org/nexus/content/groups/public"}]
                  ["sonatype" {:url "http://oss.sonatype.org/content/repositories/releases"}]]
-  :source-paths ["src/main/clojure" "jars/*"]
-  :test-paths ["src/test/clojure"]
-  :resource-paths ["src/main/resources"]
-  :javac-options ["-target" "1.6" "-source" "1.6" "-Xlint:-options"]
+  :source-paths      ["src/main/clojure" "jars/*"]
+  :java-source-paths ["src/main/java"]
+  :test-paths        ["src/test/clojure"]
+  :resource-paths    ["src/main/resources"]
+  :javac-options     ["-target" "1.6" "-source" "1.6" "-Xlint:-options"]
   :profiles {:dev {:plugins [[lein-midje "2.0.4"]]}})

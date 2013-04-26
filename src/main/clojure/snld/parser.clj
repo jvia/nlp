@@ -46,6 +46,10 @@
                (if (= :right dir) "/" "\\")
                arg))))
 
+(defn lexicon->str [lexicon]
+  (for [lexitem lexicon]
+    (str (key lexitem) " " (vec (map ccg->str (val lexitem))))))
+
 
 (defn pprint-ccg [ccg]
   (println (ccg->str ccg)))
@@ -55,6 +59,8 @@
     (= :S S)
     (and (= 1 (count S))
          (= :S (first S)))))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lexicon
@@ -71,9 +77,9 @@
    :andie   [:NP (complex :right (complex :left :NP :S) :S)]
    :steve   [:NP (complex :right (complex :left :NP :S) :S)]
    ;; Verbs
-   :sent    [(complex :right :PP (complex :left :NP :S))
+   :sent    [(complex :right :NP (complex :left :NP :S))
              (complex :right :PP (complex :left :N :N))]
-   :loves   [(complex :right :PP (complex :left :NP :S))
+   :loves   [(complex :right :NP (complex :left :NP :S))
              (complex :right :PP (complex :left :N :N))
              (complex :right :NP (complex :right (complex :left (complex :left :NP :S) (complex :left :NP :S)) (complex :left :NP :S)))] ;;
    ;; Adverb
@@ -159,13 +165,11 @@
   left-branching derivation?)"
   ;; TODO move from automatic sentence construction to abstract types
   [alpha]
-  (when (atom? alpha)
-    (complex :right (complex :left alpha :T) :T)))
+  (complex :right (complex :left alpha :T) :T))
 
 (defn backward-type-raise
   [alpha]
-  (when (atom? alpha)
-    (complex :left (complex :right alpha :T) :T)))
+  (complex :left (complex :right alpha :T) :T))
 
 
 (defn unify
