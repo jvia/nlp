@@ -14,13 +14,23 @@
 (ns ^{:doc "A dialogue "
       :author "Jeremiah Via"}
   snld.dialogue
+  (:refer-clojure :exclude [==])
   (:require [snld.sapa :as sapa])
-  (:use [clojure.core.match :only [match]]))
+  (:use [clojure.core.match :only [match]]
+        clojure.core.logic))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Basic stuff
 (defn predicate [name & vars]
   {:name name :vars (into {} (for [var vars] {(keyword var) nil}))})
+
+(defn bind
+  "Attempt to bind the given value to the specified var in the
+  predicate. Return a new predicate with the bound var or nil."
+  [predicate var val]
+  (when (and (contains? (:vars predicate) var)
+             (nil? (get-in predicate [:vars var])))
+    (assoc-in predicate [:vars var] val)))
 
 (defn predicate->str [predicate]
   (str "(" (:name predicate) " "
@@ -33,104 +43,57 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PDDL-ish stuff
+(defrel type type)
 
 
+;; agent(robby).
+;; agent(human).
+(defrel agent agent)
+(agent :robby)
+(agent :human)
+
+;; goal(put_away, dishes).
+(defrel goal action object)
+(goal :put-away, :dishes)
 
 (def script
-  [{:human {:str "Robby, help me with the dishes."
-            :parse '(:S
-                     (:NP (:NNP :robby))
-                     (:VP (:VB :help)
-                          (:NP (:PRP :me))
-                          (:PP (:IN :with)
-                               (:NP (:DT :the) (:NNS :dishes)))))}}
+  [{:human {:str "Robby, put away the clean dishes."
+            :sem [:forall :x [[[:dish :x] :& [:clean :x]] :-> [:put_away :x]]]}}
    {:robot {:str "Okay."
-            :parse '(:INTJ (:UH :okay))}}
+            :sem :ack}}
    {:human {:str  "How many dishes are dirty?"
-            :parse '(:SBARQ
-                     (:WHNP
-                      (:WHADJP (:WRB :how) (:JJ :many))
-                      (:NNS :dishes))
-                     (:SQ
-                      (:VP (:VBP :are)
-                           (:ADJP (:JJ :dirty)))))}}
+            :sem [:query :x [[:dishes :x] :& [:dirty :x]]]}}
    {:robot {:str "Four."
-            :parse '(:FRAG
-                     (:NP (:CD :four)))}}
+            :sem [:number 4]}}
    {:human {:str "Okay. I will clean the plates, then you put them away."
-            :parse '(:S
-                     (:S
-                      (:NP (:PRP :i))
-                      (:VP (:MD :will)
-                           (:VP (:VB :wash)
-                                (:CC :and)
-                                (:VB :dry)
-                                (:NP (:DT :the) (:NNS :dishes)))))
-                     (:RB :then)
-                     (:S
-                      (:NP (:PRP :you))
-                      (:VP (:VBD :put)
-                           (:NP (:PRP :them))
-                           (:ADVP (:RB :away)))))}}
+            :sem [:ack [:forall :x :y :z [[[:human :y] :-> [[:plate :x] :-> [:clean :x]]] :&
+                                          [[:robot :z] :-> [:put_away :x]]]]]}}
    {:robot {:str "Okay."
-            :parse '(:INTJ (:UH :okay))}}
+            :sem :ack}}
    {:human {:str "The first plate is clean."
-            :parse '(:S
-                     (:NP (:DT :the) (:JJ :first) (:NN :dish))
-                     (:VP (:VBZ :is)
-                          (:ADJP (:JJ :clean))))}}
+            :sem [:exists :x [[:plate :x] :-> [:clean :x]]]}}
    {:robot {:str "Okay."
-            :parse '(:INTJ (:UH :okay))}}
+            :sem :ack}}
    {:human {:str "WOAH."
-            :parse '(:FRAG (:NP (:NNP :whoa)))}}
+            :sem :exclaim}}
    {:human {:str "You just broke the plate."
-            :parse '(:S (:NP (:PRP :you))
-                        (:ADVP (:RB :just))
-                        (:VP (:VBD :broke)
-                             (:NP (:DT :the) (:NN :plate))))}}
+            :sem [:exists :x :y [[:robot :y] :& [:plate :x] :& [:broke :x]]]}}
    {:human {:str "Why did you do that?"
-            :parse '(:SBARQ
-                     (:WHADVP (:WRB :why))
-                     (:SQ (:VBD :did)
-                          (:NP (:PRP :you))
-                          (:VP (:VB :do)
-                               (:NP (:DT :that)))))}}
+            :sem [:query :x [[:plate :x] :& [:broke :x]]]}}
    {:robot {:str "I don't know."
-            :parse '(:S (:NP (:PRP :i))
-                        (:VP (:VBP :do) (:RB :nt)
-                             (:VP (:VB :know))))}}
+            :sem [:unknown]}}
    {:human {:str "Go slower and that won't happen."
-            :parse '(:S (:S
-                         (:VP (:VB :go)
-                              (:ADJP (:JJR :slower))))
-                        (:CC :and)
-                        (:S
-                         (:NP (:DT :that))
-                         (:VP (:MD :wo) (:RB :nt)
-                              (:VP (:VB :happen)))))}}
+            :sem [[:slower :action] :-> [:not [:exists :x [:plate :x] :& [:broke :x]]]]}}
    {:robot {:str "Okay."
-            :parse '(:INTJ (:UH :okay))}}
+            :sem :ack}}
    {:human {:str "Now put the rest away."
-            :parse '(:S
-                     (:ADVP (:RB :now))
-                     (:VP (:VB :put)
-                          (:NP (:DT :the) (:NN :rest))
-                          (:ADVP (:RB :away))))}}
+            :sem [:forall :x [[:plate :x] :-> [:put_away :x]]]}}
    {:robot {:str "Okay."
-            :parse '(:INTJ (:UH :okay))}}
+            :sem :ack}}
    {:human {:str "How many do you need to put away?"
-            :parse '(:SBARQ
-                     (:WHADJP (:WRB :how) (:JJ :many))
-                     (:SQ (:VBP :do)
-                          (:NP (:PRP :you))
-                          (:VP (:VB :need)
-                               (:S
-                                (:VP (:TO :to)
-                                     (:VP (:VB :put)
-                                          (:PRT (:RP :away))))))))}}
+            :sem [:query :x [[:plate :x] :& [:number :x]]]}}
    {:robot {:str "Three."
-            :parse '(:FRAG
-                     (:NP (:CD :three)))}}])
+            :sem [:number 3]}}])
 
 
 (def statuses [:not_started :started :in_progress :complete :unknown])
@@ -142,10 +105,12 @@
    :dry_dishes 1})
 
 (def human-kb
-  {:mood :unknown})
+  {:mood :unknown
+   :identity :human})
 
 (def self-db
-  {:name "Robby"
+  {:name :robby
+   :identity :robot
    :speed :fast
    :confidence :high})
 
