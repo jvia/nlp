@@ -210,8 +210,8 @@
 
 (defn closest-vector [v cb]
   (reduce (fn [a b] (if (< (euclidean-distance (key a) v)
-                          (euclidean-distance (key b) v))
-                     a b)) cb))
+                           (euclidean-distance (key b) v))
+                      a b)) cb))
 
 
 (defn kmm-assign
@@ -308,13 +308,13 @@
 (defn gordon
   "A function wherein Gordon verifies exercise success"
   []
-  (let [ ;; Be patient
-        hmms [(train-hmm "red" red)
+  (let [hmms [(train-hmm "red" red)
               (train-hmm "green" green)
-              (train-hmm "white" white)]
-        ;; Be real patient
-        output {"red"   (map #(batch-recognize % hmms) (noisify red2-features   :range 3.0 :copies 400))
-                "green" (map #(batch-recognize % hmms) (noisify green2-features :range 3.0 :copies 400))
-                "white" (map #(batch-recognize % hmms) (noisify white1-features :range 3.0 :copies 400))}
-        stats (double (percent-correct output))]
-    (println "Percent correct: " stats)))
+              (train-hmm "white" white)]]
+    (println "hmms trained")
+    (let [output {"red"   (map #(batch-recognize % hmms) (noisify red2-features   :range 3.0 :copies 400))
+                   "green" (map #(batch-recognize % hmms) (noisify green2-features :range 3.0 :copies 400))
+                   "white" (map #(batch-recognize % hmms) (noisify white1-features :range 3.0 :copies 400))}]
+         (println "tests run")
+         (let [stats (double (percent-correct output))]
+           (println "Percent correct: " stats)))))

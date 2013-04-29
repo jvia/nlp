@@ -17,4 +17,5 @@
   :test-paths        ["src/test/clojure"]
   :resource-paths    ["src/main/resources"]
   :javac-options     ["-target" "1.6" "-source" "1.6" "-Xlint:-options"]
+  :main snld.core
   :profiles {:dev {:plugins [[lein-midje "2.0.4"]]}})

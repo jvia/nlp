@@ -233,3 +233,8 @@
                      (println "Reduce")
                      (pprint-stacks reduce))
                  (recur rest reduce))))))))
+
+(defn gordon []
+  (let [s1 "the doctor sent for the patient arrived"]
+    (println "Parsing:" s1)
+    (batch-parse s1)))

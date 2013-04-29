@@ -41,21 +41,6 @@
 
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; PDDL-ish stuff
-(defrel type type)
-
-
-;; agent(robby).
-;; agent(human).
-(defrel agent agent)
-(agent :robby)
-(agent :human)
-
-;; goal(put_away, dishes).
-(defrel goal action object)
-(goal :put-away, :dishes)
-
 (def script
   [{:human {:str "Robby, put away the clean dishes."
             :sem [:forall :x [[[:dish :x] :& [:clean :x]] :-> [:put_away :x]]]}}
@@ -96,13 +81,30 @@
             :sem [:number 3]}}])
 
 
-(def statuses [:not_started :started :in_progress :complete :unknown])
-
+(def human-script
+  '({:str "Robby, put away the clean dishes.",
+     :sem [:forall :x [[[:dish :x] :& [:clean :x]] :-> [:put_away :x]]]}
+    {:str "How many dishes are dirty?",
+     :sem [:query :x [[:dishes :x] :& [:dirty :x]]]}
+    {:str "Okay. I will clean the plates, then you put them away.",
+     :sem [:ack [:forall :x :y :z [[[:human :y] :-> [[:plate :x] :-> [:clean :x]]] :& [[:robot :z] :-> [:put_away :x]]]]]}
+    {:str "The first plate is clean.",
+     :sem [:exists :x [[:plate :x] :-> [:clean :x]]]}
+    {:str "WOAH.", :sem :exclaim}
+    {:str "You just broke the plate.",
+     :sem [:exists :x :y [[:robot :y] :& [:plate :x] :& [:broke :x]]]}
+    {:str "Why did you do that?",
+     :sem [:query :x [[:plate :x] :& [:broke :x]]]}
+    {:str "Go slower and that won't happen.",
+     :sem [[:slower :action] :-> [:not [:exists :x [:plate :x] :& [:broke :x]]]]}
+    {:str "Now put the rest away.",
+     :sem [:forall :x [[:plate :x] :-> [:put_away :x]]]}
+    {:str "How many do you need to put away?",
+     :sem [:query :x [[:plate :x] :& [:number :x]]]}))
 
 
 (def task-kb
-  {:status :unknown
-   :dry_dishes 1})
+  {:status :unknown})
 
 (def human-kb
   {:mood :unknown
@@ -114,26 +116,55 @@
    :speed :fast
    :confidence :high})
 
-(def kb {:task task-kb :human human-kb :self self-db})
+(def world-db
+  {:dishes {:dirty 4 :clean 0}})
 
+(def kb {:task task-kb :human human-kb :self self-db :world world-db})
+
+
+(defn act
+  "Perform an action based on the KB."
+  [kb old-kb]
+  (let [cur-goal (first (get-in kb [:task :goal]))]
+    (match [cur-goal]
+           [[:query :x [[:dishes :x] :& [:dirty :x]]]] (assoc-in kb [:self :communicate] (get-in kb [:world :dishes :dirty])))))
+
+(defn update-task [utterance kb]
+  #_(println "UTTERANCE:" utterance)
+  (match
+   [utterance]
+   [[:forall :x [[[:dish :x] :& [:clean :x]] :-> [:put_away :x]]]] (assoc-in (assoc-in kb [:task :status] [:started]) [:task :goal] [utterance])
+   [[:query :x [[:dishes :x] :& [:dirty :x]]]]                     (update-in (update-in kb [:task :status] #(cons :started %)) [:task :goal] #(cons utterance %))
+   [:done]                                                         (assoc-in (assoc-in kb [:task :status] :done) [:task :goal] nil)
+   :else kb))
 
 (defn update-status [utterance kb]
-  (assoc-in kb [:status] :in_progress))
+  kb)
 
-(defn dialogue [utterance kb]
-  (update-status utterance kb))
+(defn generate-utterance [utterance kb old-kb]
+  (cond
+   (not (nil? (get-in kb [:self :communicate]))) (get-in kb [:self :communicate])
+   (and (nil? (-> old-kb :task :goal)) (not (nil? (-> kb :task :goal)))) "okay"
+        :else "bleep bloop"))
+
+(defn dialogue
+  "Given the logical representation of an utterance, update the knowledge base "
+  [utterance kb]
+  (let [task      (update-task utterance kb)
+        status    (update-status utterance task)
+        post-act  (act status kb)
+        utterance (generate-utterance utterance post-act kb)]
+    (println "POST-ACT" post-act)
+    {:kb post-act :out utterance}))
 
 (defn batch-dialogue [script]
   (loop [[line & lines] script kb kb]
+    (println "HUMAN:"  (:str line))
     (if (nil? line) kb
-        (recur lines (dialogue line kb)))))
+        (let [{kb' :kb out :out} (dialogue (:sem line) kb)]
+          (println "ROBOT:" out)
+          (recur lines kb')))))
 
-;; - need this information to start training
-;; - need a way to represent the pomdp, the
-;; - MPD needs to learn a policy
-
-
-;; pomdp has:
-;; - set of actions
-;; - immediate reward function
-;; - probabilistic stte-transition function
+(defn gordon []
+  (let [kb (batch-dialogue human-script)]
+    (println kb)))
