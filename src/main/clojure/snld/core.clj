@@ -10,16 +10,11 @@
     (println "+------------------------------------------------+")
     (println "|              HMM Speech Recognizer             |")
     (println "+------------------------------------------------+")   
-    #_(speech/gordon)
+    (speech/gordon)
     (println "\n\n")
     (println "+------------------------------------------------+")
     (println "|          Ruthless Reduce-First CCG Parser      |")
     (println "+------------------------------------------------+")
-    (parser/gordon)
-    (println "\n\n")
-    (println "+------------------------------------------------+")
-    (println "| Rule-based dialogue manager with introspection |")
-    (println "+------------------------------------------------+")
-    (dialogue/gordon))
+    (parser/gordon))
 
 

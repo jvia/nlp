@@ -210,8 +210,8 @@
 
 (defn closest-vector [v cb]
   (reduce (fn [a b] (if (< (euclidean-distance (key a) v)
-                           (euclidean-distance (key b) v))
-                      a b)) cb))
+                          (euclidean-distance (key b) v))
+                     a b)) cb))
 
 
 (defn kmm-assign
@@ -288,14 +288,14 @@
   partition position in each collection"
   [num coll]
   (let [partitions (map #(partition (int (/ (count %) num)) %) coll)]
-    (for [i (range (count (first partitions)))]
+    (for [i (range num)]
       (mapcat #(nth % i) partitions))))
 
 
 (defn train-hmm
   "Given a phrase and a list of feature vectors, train a HMM."
   [word-str features & {:keys [num-states] :or {num-states 5}}]
-  (let [feat-per-state (int (/ (count features) num-states))]
+  (let [feat-per-state num-states]
     (map->HMM
      {:output word-str
       :states num-states
@@ -308,13 +308,12 @@
 (defn gordon
   "A function wherein Gordon verifies exercise success"
   []
+  (println "Training 3 HMMs and then running on 1600 samples. Be patient...")
   (let [hmms [(train-hmm "red" red)
               (train-hmm "green" green)
-              (train-hmm "white" white)]]
-    (println "hmms trained")
-    (let [output {"red"   (map #(batch-recognize % hmms) (noisify red2-features   :range 3.0 :copies 400))
-                   "green" (map #(batch-recognize % hmms) (noisify green2-features :range 3.0 :copies 400))
-                   "white" (map #(batch-recognize % hmms) (noisify white1-features :range 3.0 :copies 400))}]
-         (println "tests run")
-         (let [stats (double (percent-correct output))]
-           (println "Percent correct: " stats)))))
+              (train-hmm "white" white)]
+        output {"red"   (map #(batch-recognize % hmms) (noisify red2-features   :range 3.0 :copies 400))
+                "green" (map #(batch-recognize % hmms) (noisify green2-features :range 3.0 :copies 400))
+                "white" (map #(batch-recognize % hmms) (noisify white1-features :range 3.0 :copies 400))}
+        stats (* 100.0 (percent-correct output))]
+    (printf "%.2f%% correct" stats)))
