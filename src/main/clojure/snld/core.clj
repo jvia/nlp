@@ -15,6 +15,7 @@
     (println "+------------------------------------------------+")
     (println "|          Ruthless Reduce-First CCG Parser      |")
     (println "+------------------------------------------------+")
-    (parser/gordon))
+    (parser/gordon)
+    (System/exit 0))
 
 
