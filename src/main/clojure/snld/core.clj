@@ -1,8 +1,7 @@
 (ns snld.core
-  (:require [snld.speech   :as speech]
-            [snld.parser   :as parser]
-            [snld.dialogue :as dialogue]))
-
+  (:require [snld.speech :as speech]
+            [snld.parser :as parser])
+  (:gen-class :main true))
 
 (defn -main
   "Run a demonstration of each component."

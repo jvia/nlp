@@ -11,11 +11,9 @@
 ;;
 ;; - Should be able to answer simple wh-questions about this domain
 ;;   and of itself in general.
-(ns ^{:doc "A dialogue "
-      :author "Jeremiah Via"}
+(ns ^{:doc "A dialogue " :author "Jeremiah Via"}
   snld.dialogue
   (:refer-clojure :exclude [==])
-  (:require [snld.sapa :as sapa])
   (:use [clojure.core.match :only [match]]
         clojure.core.logic))
 
