@@ -1,0 +1,98 @@
+\documentclass[12pt]{article}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{xspace}
+\usepackage{times}
+\usepackage{epsfig}
+\setlength{\topmargin}{0 mm}
+\setlength{\headsep}{0 mm}
+\setlength{\headheight}{0 in}
+\setlength{\voffset}{0 mm}
+\setlength{\oddsidemargin}{0 mm}
+\setlength{\evensidemargin}{0 mm}
+\setlength{\hoffset}{0 mm}
+\setlength{\textwidth}{6.5 in}
+\setlength{\textheight}{9 in}
+
+\title{Introspection Guided Dialogue-Based Task Resolution}
+\author{Jeremiah Via}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+% Introduce the reader not familiar with your project to the problem in
+% situated natural language dialogues with robots that your are tackling
+% in the paper in a very general way and line out what you are
+% tackling/solving in your project Do not go into details, but stay at a
+% very high conceptual level, address also briefly why your proposed
+% algorithms are important, what they show/imply, and what the
+% advantages of your approach are (as opposed to other existing
+% approaches) End your introduction with a very short outline of the
+% rest of the paper (in one paragraph)
+
+In situated contexts, natural language takes on a different set of
+characteristics than it does in the form in which it is typically
+studied---namely prose. This makes much research not fully-applicable
+to situated contexts, where natural language understanding software
+must deal with disfluencies, common-ground alignment, and
+response-time requirements.
+
+Key points: algorithm uses probabilistic belief, making it more robust
+to the problems posed by situatedness. depending on its confidence
+about beliefs, it asks questions it believes will yield the most
+information to the interlocutor it believes can yield the most
+information.
+
+\section{Scenario/Task description}
+% Describe the scenario/task that you are considering in detail, make
+% reference to all the sources you used and inform the reader about
+% possible strategies for developing algorithms for the task
+
+% Include background information about the task and/or other approaches
+% here Describe the task and possible solutions, and point out their
+% advantages and disadvantages
+
+% You should not repeat details of well-known algorithms; instead just
+% refer to them where appropriate (e.g., to the literature used in
+% class) You may assume that the reader has some knowledge about
+% situated natural language processing
+The task is one which the robot must search for and find a red medical
+kit in an office-like environment. The robot has beliefs about the
+usual location of these kinds of medical kits, but when reality fails
+to meet expectations, it must gather information from two
+interlocutors participating in the task. Neither interlocutor has full
+knowledge of the task and so the robot must direct the conversation
+such that it can maximize its knowledge related to the task.
+
+\section{Your solution}
+\subsection{Description of your solution}
+% Describe in detail your solution to the problem, possibly including
+% graphs and figures to aid the reader Include detailed descriptions of
+% your the algorithm and how the situated context is utilized to make
+% parts of the NL chain work better (this is critical and should be the
+% highlight of the paper)
+
+\subsection{Experiments and results}
+% Show experimental data from runs with the integrated system in ADE
+% that demonstrate your improvements and how they work
+
+% Compare your results to results without the improvements (this is
+% critical because you need to show that without utilizing the
+% situatedness of the agent, established algorithms would do worse --
+% make sure that you have a clear performance measure defined) Perform
+% simple statistics on the results if applicable S
+
+\subsection{Analysis--how and why the solution works}
+% Discuss the advantages and possible disadvantages of your algorithm
+% Suggest additional experiments and/or improvements to the solution.
+
+\section{Conclusion}
+% Summarize what your solution achieved, and how your algoritm could be
+% extended or used in other tasks Briefly discuss directions for future
+% work.
+
+\bibliographystyle{apalike}
+{\small \bibliography{references}}
+\end{document}
+%  LocalWords:  disfluencies
