@@ -20,7 +20,64 @@
 \begin{document}
 \maketitle
 
+\begin{abstract}
+  Situated task-based dialogue poses many challenges for traditional
+  natural language understanding techniques. Key among these are
+  ambiguous reference resolution, incomplete utterances, task-specific
+  utterances. This paper presents a probabilistic belief framework for
+  dealing with these challenges. By representing beliefs about the
+  world, the agent's own capabilities, and the capabilities of other
+  agents in the environment, a dialogue manager can choose actions
+  which have the highest likelihood of increasing common ground. A
+  probabilistic approach has the additional benefit of remaining
+  robust to contradictions, allowing the dialogue manager to simply
+  update its probabilities.
+\end{abstract}
+
 \section{Introduction}
+From Matthias' notes:
+\begin{itemize}
+\item Ambiguities
+  \begin{itemize}
+  \item Syntactic ambiguity: “right next to the doorway on the left on the floor” (and ambiguous confirmation “towards the second room”)
+  \item Prosody-based confirmation: “yeah that doorway” (without knowing whether the director got it right)
+  \item Repeated confirmation: “okay”, “um okay” (nothing new)
+  \end{itemize}
+\item Multi-phrase expressions
+  \begin{itemize}
+  \item Sentence instead of referent: “the – so I went ...” (also, not
+    clear when sentence ends, i.e., where the “on the bookshelf in the
+    corner of the room” belongs)
+  \item Cognitive pauses: “uh” and “um” (to gain time)
+  \item Assumption about map: “on the bookshelf in the corner” (there
+    is only one, corner does not have to be specified)
+  \end{itemize}
+\item Omissions
+  \begin{itemize}
+  \item Omissions and insertions: “uh I guess” inserted, “on” and
+    “you” omitted
+  \item Task-based reference: “put one in” and “that's all of them”
+    (assumes “yellow block”)
+  \item Contraction: “all of them you have” (not about “having” them,
+    but about “having put them in pink boxes” )
+  \end{itemize}
+\item Task knowledge
+  \begin{itemize}
+  \item Superfluous words: “like” without meaning, omit for parsing and interpretation
+  \item Perspective-taking: “the first room” or “keep going straight” (assumes knowledge of the other's orientation or position in the world)
+  \item Task goals: “unless you see anything” (assumes knowledge of the task; clearly, “anything” does not mean “anything”, it means “green box” or “blue box” based on the task instructions)
+  \end{itemize}
+\end{itemize}
+
+%  ungrammatical sentences (incomplete referential phrases, missing verbs, corrections, ...)
+%  wrong word substitutions for intended target words (“block” and “book” for “box”)
+%  underspecified directions, referents, and directives (assumes shared task-knowledge, knowledge of subgoals, perspectives, etc.)
+%  lots of “ums and “uhs” indicating cognitive load
+%  lots of coordinating “okays” (at least three different kinds can be distinguished by prosody: for acknowledgment of understanding, for requesting expansion, and for acknowledgment of completed action)
+%  automatic gesturing and pointing by the member (even though the director being able to see the member)
+%  information about meaning encoded in timing of utterances
+
+
 % Introduce the reader not familiar with your project to the problem in
 % situated natural language dialogues with robots that your are tackling
 % in the paper in a very general way and line out what you are
@@ -95,4 +152,4 @@ such that it can maximize its knowledge related to the task.
 \bibliographystyle{apalike}
 {\small \bibliography{references}}
 \end{document}
-%  LocalWords:  disfluencies
+% LocalWords:  disfluencies
