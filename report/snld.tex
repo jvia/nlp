@@ -35,100 +35,190 @@
 \end{abstract}
 
 \section{Introduction}
-From Matthias' notes:
-\begin{itemize}
-\item Ambiguities
-  \begin{itemize}
-  \item Syntactic ambiguity: “right next to the doorway on the left on the floor” (and ambiguous confirmation “towards the second room”)
-  \item Prosody-based confirmation: “yeah that doorway” (without knowing whether the director got it right)
-  \item Repeated confirmation: “okay”, “um okay” (nothing new)
-  \end{itemize}
-\item Multi-phrase expressions
-  \begin{itemize}
-  \item Sentence instead of referent: “the – so I went ...” (also, not
-    clear when sentence ends, i.e., where the “on the bookshelf in the
-    corner of the room” belongs)
-  \item Cognitive pauses: “uh” and “um” (to gain time)
-  \item Assumption about map: “on the bookshelf in the corner” (there
-    is only one, corner does not have to be specified)
-  \end{itemize}
-\item Omissions
-  \begin{itemize}
-  \item Omissions and insertions: “uh I guess” inserted, “on” and
-    “you” omitted
-  \item Task-based reference: “put one in” and “that's all of them”
-    (assumes “yellow block”)
-  \item Contraction: “all of them you have” (not about “having” them,
-    but about “having put them in pink boxes” )
-  \end{itemize}
-\item Task knowledge
-  \begin{itemize}
-  \item Superfluous words: “like” without meaning, omit for parsing and interpretation
-  \item Perspective-taking: “the first room” or “keep going straight” (assumes knowledge of the other's orientation or position in the world)
-  \item Task goals: “unless you see anything” (assumes knowledge of the task; clearly, “anything” does not mean “anything”, it means “green box” or “blue box” based on the task instructions)
-  \end{itemize}
-\end{itemize}
-
-%  ungrammatical sentences (incomplete referential phrases, missing verbs, corrections, ...)
-%  wrong word substitutions for intended target words (“block” and “book” for “box”)
-%  underspecified directions, referents, and directives (assumes shared task-knowledge, knowledge of subgoals, perspectives, etc.)
-%  lots of “ums and “uhs” indicating cognitive load
-%  lots of coordinating “okays” (at least three different kinds can be distinguished by prosody: for acknowledgment of understanding, for requesting expansion, and for acknowledgment of completed action)
-%  automatic gesturing and pointing by the member (even though the director being able to see the member)
-%  information about meaning encoded in timing of utterances
-
-
-% Introduce the reader not familiar with your project to the problem in
-% situated natural language dialogues with robots that your are tackling
-% in the paper in a very general way and line out what you are
-% tackling/solving in your project Do not go into details, but stay at a
-% very high conceptual level, address also briefly why your proposed
-% algorithms are important, what they show/imply, and what the
-% advantages of your approach are (as opposed to other existing
-% approaches) End your introduction with a very short outline of the
-% rest of the paper (in one paragraph)
-
 In situated contexts, natural language takes on a different set of
 characteristics than it does in the form in which it is typically
 studied---namely prose. This makes much research not fully-applicable
 to situated contexts, where natural language understanding software
-must deal with disfluencies, common-ground alignment, and
-response-time requirements.
+must deal with various types of disfluency, common-ground alignment,
+and response-time requirements \cite{Scheutz2011:dialogue}. For this
+particular project, the problem of ambiguous referents, ungrammatical
+sentences, and incrementality were studied. A probabilistic belief
+framework was designed to exploit situatedness to better handle these
+challenges.
 
-Key points: algorithm uses probabilistic belief, making it more robust
-to the problems posed by situatedness. depending on its confidence
-about beliefs, it asks questions it believes will yield the most
-information to the interlocutor it believes can yield the most
-information.
+During natural dialogue, ambiguous referents are almost certain to
+appear. 
+
+% Key points: algorithm uses probabilistic belief, making it more robust
+% to the problems posed by situatedness. depending on its confidence
+% about beliefs, it asks questions it believes will yield the most
+% information to the interlocutor it believes can yield the most
+% information.
+
+
+
+% From Matthias' notes:
+% \begin{itemize}
+% \item Ambiguities
+%   \begin{itemize}
+%   \item Syntactic ambiguity: “right next to the doorway on the left on the floor” (and ambiguous confirmation “towards the second room”)
+%   \item Prosody-based confirmation: “yeah that doorway” (without knowing whether the director got it right)
+%   \item Repeated confirmation: “okay”, “um okay” (nothing new)
+%   \end{itemize}
+% \item Multi-phrase expressions
+%   \begin{itemize}
+%   \item Sentence instead of referent: “the – so I went ...” (also, not
+%     clear when sentence ends, i.e., where the “on the bookshelf in the
+%     corner of the room” belongs)
+%   \item Cognitive pauses: “uh” and “um” (to gain time)
+%   \item Assumption about map: “on the bookshelf in the corner” (there
+%     is only one, corner does not have to be specified)
+%   \end{itemize}
+% \item Omissions
+%   \begin{itemize}
+%   \item Omissions and insertions: “uh I guess” inserted, “on” and
+%     “you” omitted
+%   \item Task-based reference: “put one in” and “that's all of them”
+%     (assumes “yellow block”)
+%   \item Contraction: “all of them you have” (not about “having” them,
+%     but about “having put them in pink boxes” )
+%   \end{itemize}
+% \item Task knowledge
+%   \begin{itemize}
+%   \item Superfluous words: “like” without meaning, omit for parsing and interpretation
+%   \item Perspective-taking: “the first room” or “keep going straight” (assumes knowledge of the other's orientation or position in the world)
+%   \item Task goals: “unless you see anything” (assumes knowledge of the task; clearly, “anything” does not mean “anything”, it means “green box” or “blue box” based on the task instructions)
+%   \end{itemize}
+% \end{itemize}
+
+% ungrammatical sentences (incomplete referential phrases, missing
+% verbs, corrections, ...)
+
+% wrong word substitutions for intended target words (“block” and
+% “book” for “box”)
+
+% underspecified directions, referents, and directives (assumes shared
+% task-knowledge, knowledge of subgoals, perspectives, etc.)
+
+%  lots of “ums and “uhs” indicating cognitive load
+
+%  lots of coordinating “okays” (at least three different kinds can be distinguished by prosody: for acknowledgment of understanding, for requesting expansion, and for acknowledgment of completed action)
+
+%  automatic gesturing and pointing by the member (even though the director being able to see the member)
+
+%  information about meaning encoded in timing of utterances
+
+To overcome these difficulties, a belief manager using a probabilistic
+belief representation is proposed.
+
 
 \section{Scenario/Task description}
-% Describe the scenario/task that you are considering in detail, make
-% reference to all the sources you used and inform the reader about
-% possible strategies for developing algorithms for the task
+% Describe the scenario/task that you are considering in detail
+For this task, a robot is placed in an office environment with a
+communication link to two human agents, known as \textit{cmdrX} and
+\textit{cmdrY}. The goal of this task is for the robot to locate a
+specific medical kit. No one agent has complete knowledge of the
+environment or task, nor is this knowledge guaranteed to be accurate.
+As a further difficulty, there are multiple medical kits in the
+office, and a specific one must be determined for the task to be
+completed. Key to this task are the inter-mixing of dialogue and
+physical action, underspecified instructions, and belief revision.
 
-% Include background information about the task and/or other approaches
-% here Describe the task and possible solutions, and point out their
+% make reference to all the sources you used and inform the reader
+% about possible strategies for developing algorithms for the task
+The robot has beliefs about the usual location of these kinds of
+medical kits, but when reality fails to meet expectations, it must
+gather information from two interlocutors participating in the
+task. Neither interlocutor has full knowledge of the task and so the
+robot must direct the conversation such that it can maximize its
+knowledge related to the task.
+
+% Describe the task and possible solutions, and point out their
 % advantages and disadvantages
+One approach to dialogue management is the use of a
+partially-observable Markov decision process (POMDP). It has these
+benefits\dots{}. It is unsuitable for this task...
 
 % You should not repeat details of well-known algorithms; instead just
 % refer to them where appropriate (e.g., to the literature used in
 % class) You may assume that the reader has some knowledge about
 % situated natural language processing
-The task is one which the robot must search for and find a red medical
-kit in an office-like environment. The robot has beliefs about the
-usual location of these kinds of medical kits, but when reality fails
-to meet expectations, it must gather information from two
-interlocutors participating in the task. Neither interlocutor has full
-knowledge of the task and so the robot must direct the conversation
-such that it can maximize its knowledge related to the task.
 
-\section{Your solution}
-\subsection{Description of your solution}
+\section{An Introspective Belief Framework}
+
 % Describe in detail your solution to the problem, possibly including
 % graphs and figures to aid the reader Include detailed descriptions of
 % your the algorithm and how the situated context is utilized to make
 % parts of the NL chain work better (this is critical and should be the
 % highlight of the paper)
+
+\subsection{Common Ground}
+\begin{verbatim}
+cmdrX: find the medkit.
+self: the red_medkit or the blu_medkit?
+cmdrX: the red_medkit.
+self: okay.
+\end{verbatim}
+
+\begin{verbatim}
+{{:self {:confidence 0.9}
+        {:at ...}}
+ {:objects [:red_medkit
+            :blu_medkit]}
+ {:red_medkit {:at :areaA
+               :type :medkit}}
+ {:blu_medkit {:at :areaC
+               :type :medkit}}
+...}
+\end{verbatim}
+
+\begin{verbatim}
+...
+ {:referents
+  {:medkit :red_medkit}
+...
+\end{verbatim}
+\subsection{Surprise}
+
+\begin{verbatim}
+cmdrX: whoa!
+cmdrX: what are you doing?
+self: going to areaA to find the red_medkit.
+cmdrX: the red_medkit is not at areaA.
+\end{verbatim}
+
+\begin{verbatim}
+{{:self {:confidence 0.9}
+        {:at ...}}
+ {:objects [:red_medkit
+            :blu_medkit]}
+ {:red_medkit {:at :areaA
+               :type :medkit}}
+ {:blu_medkit {:at :areaC
+               :type :medkit}}
+
+...}
+\end{verbatim}
+
+\begin{verbatim}
+...
+{:self {:confidence 0.5 :location [[x y z] [x y z w]]}}
+{:objects {:red_medkit 0.9 :blu_medkit 0.9}}
+{:areaA {:location []}}
+{:areaB {:location []}}
+{:red_medkit {:at {:areaA 0.8 :areaB 0.1 :areaC 0.1}
+             {:type {:medkit 1.0}}
+...
+\end{verbatim}
+
+\subsection{Entropy Reduction}
+\begin{verbatim}
+self: where is the red_medkit?
+cmdrX: i don't know.
+self: cmdrY, where is the red_medkit?
+cmdrY: areaB.
+self: okay.
+\end{verbatim}
 
 \subsection{Experiments and results}
 % Show experimental data from runs with the integrated system in ADE
@@ -140,7 +230,7 @@ such that it can maximize its knowledge related to the task.
 % make sure that you have a clear performance measure defined) Perform
 % simple statistics on the results if applicable S
 
-\subsection{Analysis--how and why the solution works}
+\subsection{Analysis}
 % Discuss the advantages and possible disadvantages of your algorithm
 % Suggest additional experiments and/or improvements to the solution.
 
@@ -152,4 +242,4 @@ such that it can maximize its knowledge related to the task.
 \bibliographystyle{apalike}
 {\small \bibliography{references}}
 \end{document}
-% LocalWords:  disfluencies
+% LocalWords:  disfluencies disfluency incrementality
