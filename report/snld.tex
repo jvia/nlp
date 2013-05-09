@@ -52,62 +52,48 @@ framework was designed to exploit situatedness to better handle these
 challenges.
 
 During natural dialogue, ambiguous referents are almost certain to
-appear. 
+appear. This occurs because humans make a number of hidden assumptions
+when conversing. For example, person A might ask person B to hand them
+``the mug'' from a table with multiple mugs, with the hidden
+assumption that ``the mug'' refers to the one closest to person
+B. These kind of underspecified referents need to be handled by a
+natural language understanding system. Using situatedness in this case
+yields a clear benefit. In the example with the mug, one could include
+in their model that ambiguous referents are likely to be grounded to
+the specific instance closest to the speaker or listener.
 
-% \item Ambiguities
-%   \begin{itemize}
-%   \item Syntactic ambiguity: “right next to the doorway on the left on the floor” (and ambiguous confirmation “towards the second room”)
-%   \item Assumption about map: “on the bookshelf in the corner” (there
-%     is only one, corner does not have to be specified)
-%   \item Omissions
-%     \begin{itemize}
-%     \item Omissions and insertions: “uh I guess” inserted, “on” and
-%       “you” omitted
-%     \item Task-based reference: “put one in” and “that's all of them”
-%       (assumes “yellow block”)
-%     \item Contraction: “all of them you have” (not about “having” them,
-%       but about “having put them in pink boxes” )
-%     \end{itemize}
-%   \item Task knowledge
-%     \begin{itemize}
-%     \item Superfluous words: “like” without meaning, omit for parsing and interpretation
-%     \item Perspective-taking: “the first room” or “keep going straight” (assumes knowledge of the other's orientation or position in the world)
-%     \item Task goals: “unless you see anything” (assumes knowledge of the task; clearly, “anything” does not mean “anything”, it means “green box” or “blue box” based on the task instructions)
-%     \end{itemize}
-%   \end{itemize}
+Human dialogue, unlike prose, is full of ungrammatical
+sentences. Examples include answers in response to questions or
+exclamations. Dealing with these types of sentences requires
+maintaining one's own context and the model of the other agent's
+context. In other words, when an agent makes a partial statement, what
+is the context in which this agent is most likely operating. 
 
-%   ungrammatical sentences (incomplete referential phrases, missing
-%   verbs, corrections, ...)
-
-%   wrong word substitutions for intended target words (“block” and
-%   “book” for “box”)
-
-%   underspecified directions, referents, and directives (assumes shared
-%   task-knowledge, knowledge of subgoals, perspectives, etc.)
-
-
-%    automatic gesturing and pointing by the member (even though the director being able to see the member)
-
-%    information about meaning encoded in timing of utterances
-
-
-To overcome these difficulties, a belief manager using a probabilistic
-belief representation is proposed.
+Incrementality is a natural part of speech. Rarely is a task between
+two human laid out in full detail in one statement. Typically, the
+meaning of a task is negotiated between two humans, with a
+back-and-forth dialogue. This process ensures common ground between
+the agents. To function successfully with humans, a robot must be able
+to have partial task representations which are refined through
+dialogue until enough information is present to complete the task.
 
 The rest of the paper is organized as follows. Section
-\ref{sec:scenaro} introduces the scenario used for this
+\ref{sec:scenario} introduces the scenario used for this
 project. Particular attention will be paid to the real-world aspects
 of the domain that make traditional natural language
 understanding. This scenario will motivate the necessity of exploiting
 the embodied nature of the robot and its situatedness for improved
 performance in this kind of environment. Section \ref{sec:framework}
-will describe the approach used with respect to the problem
-domain. Particular difficulties of task-based dialogue will be used as
-examples against the idea to show how performance improves. In section
-\ref{sec:analysis} an analysis of the approach will be made.
+will describe the approach used with respect to the problem domain. A
+belief manager using a probabilistic belief representation is proposed
+to best make use of situatedness for directing dialogue and physical
+action with respect to the task.  Particular difficulties of
+task-based dialogue will be used as examples against the idea to show
+how performance improves. In section \ref{sec:analysis} an analysis of
+the approach will be made.
 
-\section{Scenario/Task description}
-\label{sec:scenaro}
+\section{Scenario}
+\label{sec:scenario}
 % Describe the scenario/task that you are considering in detail
 For this task, a robot is placed in an office environment with a
 communication link to two human agents, known as \textit{cmdrX} and
@@ -165,66 +151,67 @@ More detail about the solution goes here\dots.
 % information.
 
 
-\subsection{Common Ground}
+% \subsection{Common Ground}
 
-\begin{wrapfigure}{r}{0.7\textwidth}
-  \label{fig:cg_text}
-  \caption{A piece of dialogue which requires common grounding.}
-  \begin{alltt}
-    cmdrX: find the medkit.
-    self:  the red_medkit or the blu_medkit?
-    cmdrX: the red_medkit.
-    self:  okay.
-  \end{alltt}
-\end{wrapfigure}
+% \begin{wrapfigure}{r}{0.5\textwidth}
+%   \label{fig:cg_text}
+%   \caption{A piece of dialogue which requires common grounding.}
+%   \begin{alltt}
+%     cmdrX: find the medkit.
+%     self:  the red_medkit or
+%            the blu_medkit?
+%     cmdrX: the red_medkit.
+%     self:  okay.
+%   \end{alltt}
+% \end{wrapfigure}
 
+% \begin{wrapfigure}{r}{0.5\textwidth}
+%   \begin{alltt}
+%     \{:referents
+%     \{:medkit :red_medkit\}\}
+%   \end{alltt}
+% \end{wrapfigure}
+% \subsection{Surprise}
 
+% \begin{verbatim}
+% cmdrX: whoa!
+% cmdrX: what are you doing?
+% self: going to areaA to find the red_medkit.
+% cmdrX: the red_medkit is not at areaA.
+% \end{verbatim}
 
-\begin{alltt}
-\{:referents
- \{:medkit :red_medkit\}\}
-\end{alltt}
-\subsection{Surprise}
+% \begin{verbatim}
+% {{:self {:confidence 0.9}
+%         {:at ...}}
+%  {:objects [:red_medkit
+%             :blu_medkit]}
+%  {:red_medkit {:at :areaA
+%                :type :medkit}}
+%  {:blu_medkit {:at :areaC
+%                :type :medkit}}
 
-\begin{verbatim}
-cmdrX: whoa!
-cmdrX: what are you doing?
-self: going to areaA to find the red_medkit.
-cmdrX: the red_medkit is not at areaA.
-\end{verbatim}
+% ...}
+% \end{verbatim}
 
-\begin{verbatim}
-{{:self {:confidence 0.9}
-        {:at ...}}
- {:objects [:red_medkit
-            :blu_medkit]}
- {:red_medkit {:at :areaA
-               :type :medkit}}
- {:blu_medkit {:at :areaC
-               :type :medkit}}
+% \begin{verbatim}
+% ...
+% {:self {:confidence 0.5 :location [[x y z] [x y z w]]}}
+% {:objects {:red_medkit 0.9 :blu_medkit 0.9}}
+% {:areaA {:location []}}
+% {:areaB {:location []}}
+% {:red_medkit {:at {:areaA 0.8 :areaB 0.1 :areaC 0.1}
+%              {:type {:medkit 1.0}}
+% ...
+% \end{verbatim}
 
-...}
-\end{verbatim}
-
-\begin{verbatim}
-...
-{:self {:confidence 0.5 :location [[x y z] [x y z w]]}}
-{:objects {:red_medkit 0.9 :blu_medkit 0.9}}
-{:areaA {:location []}}
-{:areaB {:location []}}
-{:red_medkit {:at {:areaA 0.8 :areaB 0.1 :areaC 0.1}
-             {:type {:medkit 1.0}}
-...
-\end{verbatim}
-
-\subsection{Entropy Reduction}
-\begin{verbatim}
-self: where is the red_medkit?
-cmdrX: i don't know.
-self: cmdrY, where is the red_medkit?
-cmdrY: areaB.
-self: okay.
-\end{verbatim}
+% \subsection{Entropy Reduction}
+% \begin{verbatim}
+% self: where is the red_medkit?
+% cmdrX: i don't know.
+% self: cmdrY, where is the red_medkit?
+% cmdrY: areaB.
+% self: okay.
+% \end{verbatim}
 
 \subsection{Experiments and results}
 \label{sec:experiments}
@@ -273,4 +260,4 @@ This paper showed\dots.
 \bibliographystyle{apalike} {\small \bibliography{references}}
 \end{document}
 % LocalWords:  disfluencies disfluency incrementality  cmdrY
-% LocalWords:  cmdrX
+% LocalWords:  cmdrX situatedness underspecified
