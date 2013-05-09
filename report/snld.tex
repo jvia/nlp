@@ -5,6 +5,9 @@
 \usepackage{xspace}
 \usepackage{times}
 \usepackage{epsfig}
+\usepackage{alltt}
+\usepackage{wrapfig}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 \setlength{\topmargin}{0 mm}
 \setlength{\headsep}{0 mm}
 \setlength{\headheight}{0 in}
@@ -51,64 +54,41 @@ challenges.
 During natural dialogue, ambiguous referents are almost certain to
 appear. 
 
-% Key points: algorithm uses probabilistic belief, making it more robust
-% to the problems posed by situatedness. depending on its confidence
-% about beliefs, it asks questions it believes will yield the most
-% information to the interlocutor it believes can yield the most
-% information.
-
-
-
-% From Matthias' notes:
-% \begin{itemize}
 % \item Ambiguities
 %   \begin{itemize}
 %   \item Syntactic ambiguity: “right next to the doorway on the left on the floor” (and ambiguous confirmation “towards the second room”)
-%   \item Prosody-based confirmation: “yeah that doorway” (without knowing whether the director got it right)
-%   \item Repeated confirmation: “okay”, “um okay” (nothing new)
-%   \end{itemize}
-% \item Multi-phrase expressions
-%   \begin{itemize}
-%   \item Sentence instead of referent: “the – so I went ...” (also, not
-%     clear when sentence ends, i.e., where the “on the bookshelf in the
-%     corner of the room” belongs)
-%   \item Cognitive pauses: “uh” and “um” (to gain time)
 %   \item Assumption about map: “on the bookshelf in the corner” (there
 %     is only one, corner does not have to be specified)
+%   \item Omissions
+%     \begin{itemize}
+%     \item Omissions and insertions: “uh I guess” inserted, “on” and
+%       “you” omitted
+%     \item Task-based reference: “put one in” and “that's all of them”
+%       (assumes “yellow block”)
+%     \item Contraction: “all of them you have” (not about “having” them,
+%       but about “having put them in pink boxes” )
+%     \end{itemize}
+%   \item Task knowledge
+%     \begin{itemize}
+%     \item Superfluous words: “like” without meaning, omit for parsing and interpretation
+%     \item Perspective-taking: “the first room” or “keep going straight” (assumes knowledge of the other's orientation or position in the world)
+%     \item Task goals: “unless you see anything” (assumes knowledge of the task; clearly, “anything” does not mean “anything”, it means “green box” or “blue box” based on the task instructions)
+%     \end{itemize}
 %   \end{itemize}
-% \item Omissions
-%   \begin{itemize}
-%   \item Omissions and insertions: “uh I guess” inserted, “on” and
-%     “you” omitted
-%   \item Task-based reference: “put one in” and “that's all of them”
-%     (assumes “yellow block”)
-%   \item Contraction: “all of them you have” (not about “having” them,
-%     but about “having put them in pink boxes” )
-%   \end{itemize}
-% \item Task knowledge
-%   \begin{itemize}
-%   \item Superfluous words: “like” without meaning, omit for parsing and interpretation
-%   \item Perspective-taking: “the first room” or “keep going straight” (assumes knowledge of the other's orientation or position in the world)
-%   \item Task goals: “unless you see anything” (assumes knowledge of the task; clearly, “anything” does not mean “anything”, it means “green box” or “blue box” based on the task instructions)
-%   \end{itemize}
-% \end{itemize}
 
-% ungrammatical sentences (incomplete referential phrases, missing
-% verbs, corrections, ...)
+%   ungrammatical sentences (incomplete referential phrases, missing
+%   verbs, corrections, ...)
 
-% wrong word substitutions for intended target words (“block” and
-% “book” for “box”)
+%   wrong word substitutions for intended target words (“block” and
+%   “book” for “box”)
 
-% underspecified directions, referents, and directives (assumes shared
-% task-knowledge, knowledge of subgoals, perspectives, etc.)
+%   underspecified directions, referents, and directives (assumes shared
+%   task-knowledge, knowledge of subgoals, perspectives, etc.)
 
-%  lots of “ums and “uhs” indicating cognitive load
 
-%  lots of coordinating “okays” (at least three different kinds can be distinguished by prosody: for acknowledgment of understanding, for requesting expansion, and for acknowledgment of completed action)
+%    automatic gesturing and pointing by the member (even though the director being able to see the member)
 
-%  automatic gesturing and pointing by the member (even though the director being able to see the member)
-
-%  information about meaning encoded in timing of utterances
+%    information about meaning encoded in timing of utterances
 
 
 To overcome these difficulties, a belief manager using a probabilistic
@@ -124,8 +104,7 @@ performance in this kind of environment. Section \ref{sec:framework}
 will describe the approach used with respect to the problem
 domain. Particular difficulties of task-based dialogue will be used as
 examples against the idea to show how performance improves. In section
-\ref{sec:experiments}, a set of experimental results will be shown and
-in \ref{sec:analysis} an analysis of the approach will be made.
+\ref{sec:analysis} an analysis of the approach will be made.
 
 \section{Scenario/Task description}
 \label{sec:scenaro}
@@ -179,32 +158,32 @@ possible.
 
 More detail about the solution goes here\dots.
 
+% Key points: algorithm uses probabilistic belief, making it more robust
+% to the problems posed by situatedness. depending on its confidence
+% about beliefs, it asks questions it believes will yield the most
+% information to the interlocutor it believes can yield the most
+% information.
+
+
 \subsection{Common Ground}
-\begin{verbatim}
-cmdrX: find the medkit.
-self: the red_medkit or the blu_medkit?
-cmdrX: the red_medkit.
-self: okay.
-\end{verbatim}
 
-\begin{verbatim}
-{{:self {:confidence 0.9}
-        {:at ...}}
- {:objects [:red_medkit
-            :blu_medkit]}
- {:red_medkit {:at :areaA
-               :type :medkit}}
- {:blu_medkit {:at :areaC
-               :type :medkit}}
-...}
-\end{verbatim}
+\begin{wrapfigure}{r}{0.7\textwidth}
+  \label{fig:cg_text}
+  \caption{A piece of dialogue which requires common grounding.}
+  \begin{alltt}
+    cmdrX: find the medkit.
+    self:  the red_medkit or the blu_medkit?
+    cmdrX: the red_medkit.
+    self:  okay.
+  \end{alltt}
+\end{wrapfigure}
 
-\begin{verbatim}
-...
- {:referents
-  {:medkit :red_medkit}
-...
-\end{verbatim}
+
+
+\begin{alltt}
+\{:referents
+ \{:medkit :red_medkit\}\}
+\end{alltt}
 \subsection{Surprise}
 
 \begin{verbatim}
