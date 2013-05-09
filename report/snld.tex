@@ -1,3 +1,4 @@
+
 \documentclass[12pt]{article}
 \usepackage{times}
 \usepackage{latexsym}
@@ -35,6 +36,7 @@
 \end{abstract}
 
 \section{Introduction}
+\label{sec:intro}
 In situated contexts, natural language takes on a different set of
 characteristics than it does in the form in which it is typically
 studied---namely prose. This makes much research not fully-applicable
@@ -108,11 +110,25 @@ appear.
 
 %  information about meaning encoded in timing of utterances
 
+
 To overcome these difficulties, a belief manager using a probabilistic
 belief representation is proposed.
 
+The rest of the paper is organized as follows. Section
+\ref{sec:scenaro} introduces the scenario used for this
+project. Particular attention will be paid to the real-world aspects
+of the domain that make traditional natural language
+understanding. This scenario will motivate the necessity of exploiting
+the embodied nature of the robot and its situatedness for improved
+performance in this kind of environment. Section \ref{sec:framework}
+will describe the approach used with respect to the problem
+domain. Particular difficulties of task-based dialogue will be used as
+examples against the idea to show how performance improves. In section
+\ref{sec:experiments}, a set of experimental results will be shown and
+in \ref{sec:analysis} an analysis of the approach will be made.
 
 \section{Scenario/Task description}
+\label{sec:scenaro}
 % Describe the scenario/task that you are considering in detail
 For this task, a robot is placed in an office environment with a
 communication link to two human agents, known as \textit{cmdrX} and
@@ -137,20 +153,31 @@ knowledge related to the task.
 % advantages and disadvantages
 One approach to dialogue management is the use of a
 partially-observable Markov decision process (POMDP). It has these
-benefits\dots{}. It is unsuitable for this task...
+benefits\dots. It is unsuitable for this task...
 
+Rule-based approaches are also common\dots.
 % You should not repeat details of well-known algorithms; instead just
 % refer to them where appropriate (e.g., to the literature used in
 % class) You may assume that the reader has some knowledge about
 % situated natural language processing
 
 \section{An Introspective Belief Framework}
-
+\label{sec:framework}
 % Describe in detail your solution to the problem, possibly including
 % graphs and figures to aid the reader Include detailed descriptions of
 % your the algorithm and how the situated context is utilized to make
 % parts of the NL chain work better (this is critical and should be the
 % highlight of the paper)
+
+To handle the challenges previously outlined, an introspective
+framework utilizing probabilistic beliefs was developed. Central to
+this idea was a constantly changing set of beliefs. The goal of the
+agent was to minimize the entropy of its beliefs with respect to the
+task. This belief structure was used to augment a simple, rule-based
+dialogue manager, allowing it reach conclusions otherwise not
+possible.
+
+More detail about the solution goes here\dots.
 
 \subsection{Common Ground}
 \begin{verbatim}
@@ -221,6 +248,7 @@ self: okay.
 \end{verbatim}
 
 \subsection{Experiments and results}
+\label{sec:experiments}
 % Show experimental data from runs with the integrated system in ADE
 % that demonstrate your improvements and how they work
 
@@ -231,15 +259,39 @@ self: okay.
 % simple statistics on the results if applicable S
 
 \subsection{Analysis}
+\label{sec:analysis}
 % Discuss the advantages and possible disadvantages of your algorithm
 % Suggest additional experiments and/or improvements to the solution.
 
 \section{Conclusion}
+\label{sec:conclusion}
 % Summarize what your solution achieved, and how your algoritm could be
 % extended or used in other tasks Briefly discuss directions for future
 % work.
 
-\bibliographystyle{apalike}
-{\small \bibliography{references}}
+
+Utilizing more types of probabilistic distributions would allow for
+more robust inference processes. In this study, only a Bernoulii
+distribution and the more general Categorical distribution were
+used. This is quite limiting when reasoning about objects in space,
+e.g., the location of a given medical kit. A better approach would be
+to use continuous distributions, perhaps backed by a particle filter.
+Another direction would be to direct dialogue to increase common
+ground between all agents in the environment. For example, during the
+dialogue, after the robotic agent first received the location of the
+red medical kit from cmdrX, it could have tried to create common
+ground with cmdrY, creating an immediate contradiction between the
+beliefs of cmdrX and cmdrY. Dialogue could then pursue a resolution to
+this dialogue. A final improvement could be performed during the
+grounding of ambiguous referents. In this example, the robot simply
+chooses a feature with separate values to attempt to disambiguate the
+potential referents. A more natural approach would be to choose the
+most salient features of the objects for comparison. This would
+require having beliefs about objects and their salient features, but
+it is a natural fit for this kind of belief framework.
+
+This paper showed\dots.
+\bibliographystyle{apalike} {\small \bibliography{references}}
 \end{document}
-% LocalWords:  disfluencies disfluency incrementality
+% LocalWords:  disfluencies disfluency incrementality  cmdrY
+% LocalWords:  cmdrX
