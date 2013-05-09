@@ -7,6 +7,7 @@
 \usepackage{epsfig}
 \usepackage{alltt}
 \usepackage{wrapfig}
+\usepackage[ruled,vlined]{algorithm2e}
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 \setlength{\topmargin}{0 mm}
 \setlength{\headsep}{0 mm}
@@ -18,23 +19,22 @@
 \setlength{\textwidth}{6.5 in}
 \setlength{\textheight}{9 in}
 
-\title{Introspection Guided Dialogue-Based Task Resolution}
+\title{Introspection Guided Dialog-Based Task Resolution}
 \author{Jeremiah Via}
 
 \begin{document}
 \maketitle
-
 \begin{abstract}
-  Situated task-based dialogue poses many challenges for traditional
+  Situated task-based dialog poses many challenges for traditional
   natural language understanding techniques. Key among these are
   ambiguous reference resolution, incomplete utterances, task-specific
   utterances. This paper presents a probabilistic belief framework for
   dealing with these challenges. By representing beliefs about the
   world, the agent's own capabilities, and the capabilities of other
-  agents in the environment, a dialogue manager can choose actions
+  agents in the environment, a dialog manager can choose actions
   which have the highest likelihood of increasing common ground. A
   probabilistic approach has the additional benefit of remaining
-  robust to contradictions, allowing the dialogue manager to simply
+  robust to contradictions, allowing the dialog manager to simply
   update its probabilities.
 \end{abstract}
 
@@ -51,7 +51,7 @@ sentences, and incrementality were studied. A probabilistic belief
 framework was designed to exploit situatedness to better handle these
 challenges.
 
-During natural dialogue, ambiguous referents are almost certain to
+During natural dialog, ambiguous referents are almost certain to
 appear. This occurs because humans make a number of hidden assumptions
 when conversing. For example, person A might ask person B to hand them
 ``the mug'' from a table with multiple mugs, with the hidden
@@ -62,7 +62,7 @@ yields a clear benefit. In the example with the mug, one could include
 in their model that ambiguous referents are likely to be grounded to
 the specific instance closest to the speaker or listener.
 
-Human dialogue, unlike prose, is full of ungrammatical
+Human dialog, unlike prose, is full of ungrammatical
 sentences. Examples include answers in response to questions or
 exclamations. Dealing with these types of sentences requires
 maintaining one's own context and the model of the other agent's
@@ -72,10 +72,10 @@ is the context in which this agent is most likely operating.
 Incrementality is a natural part of speech. Rarely is a task between
 two human laid out in full detail in one statement. Typically, the
 meaning of a task is negotiated between two humans, with a
-back-and-forth dialogue. This process ensures common ground between
+back-and-forth dialog. This process ensures common ground between
 the agents. To function successfully with humans, a robot must be able
 to have partial task representations which are refined through
-dialogue until enough information is present to complete the task.
+dialog until enough information is present to complete the task.
 
 The rest of the paper is organized as follows. Section
 \ref{sec:scenario} introduces the scenario used for this
@@ -86,9 +86,9 @@ the embodied nature of the robot and its situatedness for improved
 performance in this kind of environment. Section \ref{sec:framework}
 will describe the approach used with respect to the problem domain. A
 belief manager using a probabilistic belief representation is proposed
-to best make use of situatedness for directing dialogue and physical
+to best make use of situatedness for directing dialog and physical
 action with respect to the task.  Particular difficulties of
-task-based dialogue will be used as examples against the idea to show
+task-based dialog will be used as examples against the idea to show
 how performance improves. In section \ref{sec:analysis} an analysis of
 the approach will be made.
 
@@ -102,7 +102,7 @@ specific medical kit. No one agent has complete knowledge of the
 environment or task, nor is this knowledge guaranteed to be accurate.
 As a further difficulty, there are multiple medical kits in the
 office, and a specific one must be determined for the task to be
-completed. Key to this task are the inter-mixing of dialogue and
+completed. Key to this task are the inter-mixing of dialog and
 physical action, underspecified instructions, and belief revision.
 
 % make reference to all the sources you used and inform the reader
@@ -114,17 +114,27 @@ task. Neither interlocutor has full knowledge of the task and so the
 robot must direct the conversation such that it can maximize its
 knowledge related to the task.
 
-% Describe the task and possible solutions, and point out their
-% advantages and disadvantages
-One approach to dialogue management is the use of a
-partially-observable Markov decision process (POMDP). It has these
-benefits\dots. It is unsuitable for this task...
-
-Rule-based approaches are also common\dots.
-% You should not repeat details of well-known algorithms; instead just
-% refer to them where appropriate (e.g., to the literature used in
-% class) You may assume that the reader has some knowledge about
-% situated natural language processing
+There are two main approaches to handling dialog
+management---knowledge-based approaches and data-driven approaches.
+Knowledge-based approaches typically used a set of hard-coded rules
+represented by a finite state automaton
+\cite{Lee2010:dialog-management}. These are useful in
+highly-structured tasks with a restricted vocabulary. While the
+ability to represent a dialog in a finite state automaton is appealing
+for efficiency and human-understandability, they are a suboptimal
+choice for situated, natural dialog because of the inability to handle
+unknown utterances or unexpected dialog flow. Data-driven approaches
+utilize sets of annotated corpora to train reinforcement learning
+algorithms, e.g., partially observable Markov decision processes
+\cite{Young2013:dialog-pomdp}. While training and annotation are time
+consuming, the algorithm is easily applied to new data sets making an
+algorithm more widely applicable. General challenges with these
+approaches is hand-turning them post-training to better fit the
+dialog. There is also the challenge that the learned model does not
+change over time. This is particularly troubling in a situated
+context, where unexpected information about a task can appear at any
+time, making a more flexible approach desirable. There is work on
+hybridizing these approaches which has shown promise.
 
 \section{An Introspective Belief Framework}
 \label{sec:framework}
@@ -133,16 +143,27 @@ Rule-based approaches are also common\dots.
 % your the algorithm and how the situated context is utilized to make
 % parts of the NL chain work better (this is critical and should be the
 % highlight of the paper)
-
 To handle the challenges previously outlined, an introspective
 framework utilizing probabilistic beliefs was developed. Central to
 this idea was a constantly changing set of beliefs. The goal of the
 agent was to minimize the entropy of its beliefs with respect to the
 task. This belief structure was used to augment a simple, rule-based
-dialogue manager, allowing it reach conclusions otherwise not
-possible.
+dialog manager, allowing it reach conclusions otherwise not
+possible. The algorithm ran in a reactive manner to new utterances,
+using each utterance to update its set of beliefs and then using this
+new belief set and the utterance to generate an appropriate
+action. The action type was varied, ranging from basic motion
+commands, to navigation commands, to dialog acts. The two key
+algorithms were \texttt{update} and \texttt{act}.
 
-More detail about the solution goes here\dots.
+The \texttt{update} algorithm (algorithm \pageref{algo:update}) takes
+as input a new speaker utterance and updates its beliefs about the
+task, its interlocutors, the world, or itself. The manner of this
+update is dependent on the type of utterance. For example,
+instructions are placed as goals in the belief structure, with
+sub-goals being added as necessary.
+
+The \texttt{act} algorithm (algorithm \ref{algo:action})
 
 % Key points: algorithm uses probabilistic belief, making it more robust
 % to the problems posed by situatedness. depending on its confidence
@@ -150,79 +171,107 @@ More detail about the solution goes here\dots.
 % information to the interlocutor it believes can yield the most
 % information.
 
+\begin{algorithm}{h}
+  \DontPrintSemicolon
+  \KwData{an utterance $u$}
+  \KwResult{$beliefs'$}
+  \Switch{$u$}{
+    \Case{instruction}{
+      addGoal(instruction)\;
+      \If {instruction not ground} {
+        add subgoals to ground instruction
+      }
+    }
+    \Case{statement}{
+      \If {clarification} {
+        ground referent
+      }
+      \If {correction} {
+        resolve contradictions
+      }
+      \If {agent assessment} {
+        update agent confidence
+      }
+    }
+    \Case{exclamation}{
+      
+    }
+  }
+  \caption{Update Beliefs}
+  \label{algo:update}
+\end{algorithm}
 
-% \subsection{Common Ground}
 
-% \begin{wrapfigure}{r}{0.5\textwidth}
-%   \label{fig:cg_text}
-%   \caption{A piece of dialogue which requires common grounding.}
-%   \begin{alltt}
-%     cmdrX: find the medkit.
-%     self:  the red_medkit or
-%            the blu_medkit?
-%     cmdrX: the red_medkit.
-%     self:  okay.
-%   \end{alltt}
-% \end{wrapfigure}
+\begin{algorithm}
+  \DontPrintSemicolon
+  \KwData{$utterance, beliefs$}
+  \KwResult{$action$}
+  
+  \caption{Action}
+  \label{algo:action}
+\end{algorithm}
 
-% \begin{wrapfigure}{r}{0.5\textwidth}
-%   \begin{alltt}
-%     \{:referents
-%     \{:medkit :red_medkit\}\}
-%   \end{alltt}
-% \end{wrapfigure}
-% \subsection{Surprise}
+\subsection{Common Ground}
+\begin{wrapfigure}{r}{0.5\textwidth}
+  \label{fig:cg_text}
+  \caption{A piece of dialog which requires common grounding.}
+  \begin{alltt}
+    cmdrX: find the medkit.
+    self:  the red_medkit or
+    the blu_medkit?
+    cmdrX: the red_medkit.
+    self:  okay.
+  \end{alltt}
+\end{wrapfigure}
 
-% \begin{verbatim}
-% cmdrX: whoa!
-% cmdrX: what are you doing?
-% self: going to areaA to find the red_medkit.
-% cmdrX: the red_medkit is not at areaA.
-% \end{verbatim}
+\begin{wrapfigure}{r}{0.5\textwidth}
+  \begin{alltt}
+    \{:referents
+    \{:medkit :red_medkit\}\}
+  \end{alltt}
+\end{wrapfigure}
+\subsection{Surprise}
 
-% \begin{verbatim}
-% {{:self {:confidence 0.9}
-%         {:at ...}}
-%  {:objects [:red_medkit
-%             :blu_medkit]}
-%  {:red_medkit {:at :areaA
-%                :type :medkit}}
-%  {:blu_medkit {:at :areaC
-%                :type :medkit}}
+\begin{verbatim}
+cmdrX: whoa!
+cmdrX: what are you doing?
+self: going to areaA to find the red_medkit.
+cmdrX: the red_medkit is not at areaA.
+\end{verbatim}
 
-% ...}
-% \end{verbatim}
+\begin{verbatim}
+{{:self {:confidence 0.9}
+{:at ...}}
+{:objects [:red_medkit
+:blu_medkit]}
+{:red_medkit {:at :areaA
+:type :medkit}}
+{:blu_medkit {:at :areaC
+:type :medkit}}
 
-% \begin{verbatim}
-% ...
-% {:self {:confidence 0.5 :location [[x y z] [x y z w]]}}
-% {:objects {:red_medkit 0.9 :blu_medkit 0.9}}
-% {:areaA {:location []}}
-% {:areaB {:location []}}
-% {:red_medkit {:at {:areaA 0.8 :areaB 0.1 :areaC 0.1}
-%              {:type {:medkit 1.0}}
-% ...
-% \end{verbatim}
+...}
+\end{verbatim}
 
-% \subsection{Entropy Reduction}
-% \begin{verbatim}
-% self: where is the red_medkit?
-% cmdrX: i don't know.
-% self: cmdrY, where is the red_medkit?
-% cmdrY: areaB.
-% self: okay.
-% \end{verbatim}
+\begin{verbatim}
+...
+{:self {:confidence 0.5 :location [[x y z] [x y z w]]}}
+{:objects {:red_medkit 0.9 :blu_medkit 0.9}}
+{:areaA {:location []}}
+{:areaB {:location []}}
+{:red_medkit {:at {:areaA 0.8 :areaB 0.1 :areaC 0.1}
+{:type {:medkit 1.0}}
+...
+\end{verbatim}
 
-\subsection{Experiments and results}
-\label{sec:experiments}
-% Show experimental data from runs with the integrated system in ADE
-% that demonstrate your improvements and how they work
+\subsection{Entropy Reduction}
+\begin{verbatim}
+self: where is the red_medkit?
+cmdrX: i don't know.
+self: cmdrY, where is the red_medkit?
+cmdrY: areaB.
+self: okay.
+\end{verbatim}
 
-% Compare your results to results without the improvements (this is
-% critical because you need to show that without utilizing the
-% situatedness of the agent, established algorithms would do worse --
-% make sure that you have a clear performance measure defined) Perform
-% simple statistics on the results if applicable S
 
 \subsection{Analysis}
 \label{sec:analysis}
@@ -242,13 +291,13 @@ distribution and the more general Categorical distribution were
 used. This is quite limiting when reasoning about objects in space,
 e.g., the location of a given medical kit. A better approach would be
 to use continuous distributions, perhaps backed by a particle filter.
-Another direction would be to direct dialogue to increase common
+Another direction would be to direct dialog to increase common
 ground between all agents in the environment. For example, during the
-dialogue, after the robotic agent first received the location of the
+dialog, after the robotic agent first received the location of the
 red medical kit from cmdrX, it could have tried to create common
 ground with cmdrY, creating an immediate contradiction between the
-beliefs of cmdrX and cmdrY. Dialogue could then pursue a resolution to
-this dialogue. A final improvement could be performed during the
+beliefs of cmdrX and cmdrY. Dialog could then pursue a resolution to
+this dialog. A final improvement could be performed during the
 grounding of ambiguous referents. In this example, the robot simply
 chooses a feature with separate values to attempt to disambiguate the
 potential referents. A more natural approach would be to choose the
