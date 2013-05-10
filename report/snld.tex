@@ -5,6 +5,7 @@
 \usepackage{xspace}
 \usepackage{times}
 \usepackage{epsfig}
+\usepackage{subcaption}
 \usepackage{alltt}
 \usepackage{wrapfig}
 \usepackage[ruled,vlined]{algorithm2e}
@@ -161,7 +162,8 @@ as input a new speaker utterance and updates its beliefs about the
 task, its interlocutors, the world, or itself. The manner of this
 update is dependent on the type of utterance. For example,
 instructions are placed as goals in the belief structure, with
-sub-goals being added as necessary.
+sub-goals being added as necessary. Sub-goals are created to ground
+ambiguous referents in an utterance.
 
 The \texttt{act} algorithm (algorithm \ref{algo:action})
 
@@ -194,7 +196,8 @@ The \texttt{act} algorithm (algorithm \ref{algo:action})
       }
     }
     \Case{exclamation}{
-      
+      lower self confidence\;
+      attempt to determine possible problem\;
     }
   }
   \caption{Update Beliefs}
@@ -211,46 +214,102 @@ The \texttt{act} algorithm (algorithm \ref{algo:action})
   \label{algo:action}
 \end{algorithm}
 
+With high-level understanding of these two core algorithms, we now
+give example traces through small dialog acts. The intent is to show
+how these algorithms use situatedness to handle the challenges shown
+previously in section \ref{sec:intro}. 
+
 \subsection{Common Ground}
-\begin{wrapfigure}{r}{0.5\textwidth}
-  \label{fig:cg_text}
-  \caption{A piece of dialog which requires common grounding.}
-  \begin{alltt}
-    cmdrX: find the medkit.
-    self:  the red_medkit or
-    the blu_medkit?
-    cmdrX: the red_medkit.
-    self:  okay.
-  \end{alltt}
-\end{wrapfigure}
 
-\begin{wrapfigure}{r}{0.5\textwidth}
-  \begin{alltt}
-    \{:referents
-    \{:medkit :red_medkit\}\}
-  \end{alltt}
-\end{wrapfigure}
+For task-based dialog, it is critical that all agents involved refer
+to the same objects in the environment when using a share
+label. Otherwise, confusion ensues and task completion jeopardized. In
+natural dialog, the process of creating consistent labels for objects
+is one of negotiation. 
+
+\begin{figure}
+  \centering
+  \begin{subfigure}{0.4\textwidth}
+    \centering
+\begin{verbatim}
+      cmdrX: find the medkit.
+      self:  the red_medkit or
+             the blu_medkit?
+      cmdrX: the red_medkit.
+      self:  okay.
+\end{verbatim}    
+    \label{fig:cg_text}
+    \caption{Dialog}
+  \end{subfigure}
+  ~\quad
+  \begin{subfigure}{0.4\textwidth}
+    \centering
+\begin{verbatim}
+      {:referents
+        {:medkit [:red_medkit 0.9 
+                  :blu_medkit 0.1]}}
+\end{verbatim}
+    \label{fig:cg_beliefs}
+    \caption{Beliefs}
+  \end{subfigure}
+  \caption{A dialog action requiring common ground. At first the
+    referent ``medkit'' is ambiguous given the medical kits of which
+    it has knowledge, so the robot must take action to ground this
+    referent.}
+  \label{fig:cg}
+\end{figure}
+
 \subsection{Surprise}
-
+\begin{figure}
+  \centering
+  \begin{subfigure}{0.4\textwidth}
+    \centering
 \begin{verbatim}
 cmdrX: whoa!
 cmdrX: what are you doing?
-self: going to areaA to find the red_medkit.
-cmdrX: the red_medkit is not at areaA.
+self:  going to areaA to
+       find the red_medkit.
+cmdrX: the red_medkit is not
+       at areaA.
 \end{verbatim}
-
+    %\label{fig:cg_text}
+    \caption{Dialog}
+  \end{subfigure}
+  ~\quad
+  \begin{subfigure}{0.4\textwidth}
+    \centering
 \begin{verbatim}
 {{:self {:confidence 0.9}
-{:at ...}}
-{:objects [:red_medkit
-:blu_medkit]}
-{:red_medkit {:at :areaA
-:type :medkit}}
-{:blu_medkit {:at :areaC
-:type :medkit}}
-
-...}
+        {:at ...}}
+ {:objects [:red_medkit 
+            :blu_medkit]}
+ {:red_medkit
+   {:at  [:areaA 0.8
+          :areaB 0.1
+          :areaC 0.1]
+    :type :medkit}}
+ {:blu_medkit
+   {:at  [:areaA 0.8
+          :areaB 0.1
+          :areaC 0.1]
+    :type :medkit}}}
 \end{verbatim}
+
+    %\label{fig:cg_beliefs}
+    \caption{Beliefs}
+  \end{subfigure}
+  \caption{A dialog action requiring common ground. At first the
+    referent ``medkit'' is ambiguous given the medical kits of which
+    it has knowledge, so the robot must take action to ground this
+    referent.}
+  \label{fig:cg}
+\end{figure}
+
+
+% \end{subfigure}
+% \end{figure}
+
+
 
 \begin{verbatim}
 ...
