@@ -263,10 +263,15 @@ challenges shown previously in section \ref{sec:intro}.
 
 \subsection{Common Ground}
 For task-based dialog, it is critical that all agents involved refer
-to the same objects in the environment when using a share
-label. Otherwise, confusion ensues and task completion jeopardized. In
-natural dialog, the process of creating consistent labels for objects
-is one of negotiation. 
+to the same objects in the environment when using a shared
+label. Otherwise, confusion ensues and task completion is
+jeopardized. In natural dialog, the process of creating consistent
+labels for objects is one of negotiation. For a robot to take part in
+this negotiation, it must be able to fuse beliefs about the world, its
+perception, and utterances from its interlocutor. Doing this
+probabilistically allows an agent to handle the uncertainty present in
+this kind of negotiation, effectively allowing it to determine what
+the interlocutors most likely mean.
 
 \begin{figure}[h]
   \centering
@@ -282,13 +287,15 @@ is one of negotiation.
     \label{fig:cg_text}
     \caption{Dialog}
   \end{subfigure}
-  ~\quad
+  ~\qquad\qquad
   \begin{subfigure}{0.4\textwidth}
     \centering
 \begin{verbatim}
-      {:referents
-        {:medkit [:red_medkit 0.9 
-                  :blu_medkit 0.1]}}
+{:referents
+  {:medkit {:red_medkit 0.9 
+            :blu_medkit 0.1}}}
+
+
 \end{verbatim}
     \label{fig:cg_beliefs}
     \caption{Beliefs}
@@ -299,6 +306,19 @@ is one of negotiation.
     referent.}
   \label{fig:cg}
 \end{figure}
+
+In figure \ref{fig:cg}, an example of this process can be seen. The
+interlocutor, \textit{cmdrX}, commands the agent to find a medical
+kit. Because the agent has knowledge of more than one medical kit, the
+referent is ambiguous. In this case the agent simply asks to which
+ground referent the interlocutor refers. This idea can be extended to
+more complex cases where, e.g., the agent must examine multiple
+candidate objects and create a disambiguating phrase based on the most
+salient feature of each object. With this the ability, the agent could
+ask ``The red medkit on the table or the large medkit down the hall?''
+This sort of meaning negotiation is important to task-based dialog,
+and without situatedness the negotiation process would either take a
+long time or be impossible.
 
 \subsection{Surprise}
 \begin{figure}[h]
@@ -312,31 +332,77 @@ self:  going to areaA to
        find the red_medkit.
 cmdrX: the red_medkit is not
        at areaA.
+
+
+
 \end{verbatim}
     \label{fig:surprise_text}
     \caption{Dialog}
   \end{subfigure}
-  ~\quad
+  ~\qquad\qquad
   \begin{subfigure}[t]{0.4\textwidth}
     \centering
 \begin{verbatim}
-{:self {:confidence 0.5
-        :location ...}}
-{:objects {:red_medkit 0.9 :blu_medkit 0.9}}
-{:areaA {:location []}}
-{:areaB {:location []}}
-{:red_medkit {:at {:areaA 0.8 :areaB 0.1 :areaC 0.1}
-{:type {:medkit 1.0}}
+{:self {:confidence 0.5}}
+{:red_medkit
+  {:at {:areaA 0.33
+        :areaB 0.33
+        :areaC 0.33}}
+  {:type {:medkit 1.0}}}
+{:referents
+  {:medkit [:red_medkit 0.9 
+            :blu_medkit 0.1]}}
 \end{verbatim}
     \label{fig:surprise_beliefs}
     \caption{Beliefs}
   \end{subfigure}
-  \caption{TODO}
+  \caption{The interlocutor exclaiming causes the robot to lose
+    self-confidence. After further dialog, the robot is unsure of the
+    location of the medical kit.}
   \label{fig:surprise}
 \end{figure}
 
+Handling interlocutor surprise is of particular importance in an
+embodied context. It is necessary for task efficiency and human and
+robot safety. In our case (shown in figure \ref{fig:surprise}), simple
+surprise handling was used. If a surprising statement occurred during
+action execution, the robot would stop its current action and decrease
+its self confidence. With less self-confidence, input from its
+interlocutors would have more of an effect. For example, if the agent
+had a low self-confidence value and a high confidence value for its
+interlocutor, it would be more willing to accept the interlocutors
+assertion of an object's location instead of its sensors. It also
+could end up moving more slowly through the environment if it was
+unsure of its actions. Our use of these values were more simplistic
+and use simply to determine whether or not to continue action
+execution, but one can see how a more general version could
+effectively used situatedness to confer more natural interactability
+to a robot.
 
 \subsection{Entropy Reduction}
+
+For task efficiency, a robot should attempt to remove as much
+uncertainty from task-related knowledge as it can. In the example
+shown in figure \ref{fig:er}, the robot is unsure of the location of
+the red medical kit. Its first attempt to resolve this is to ask its
+current interlocutor, \textit{cmdrX}, about the location. Because
+\textit{cmdrX} does not know the location of the red medical kit, the
+robot updates its confidence of \textit{cmdrX} and asks the new most
+capable agent. In this case, that is \textit{cmdrY}. The robot chooses
+this action because it believes that asking \textit{cmdrY} will give
+it the most information with respect to the medical kit location. In
+other instances, the robot may believe that exploration is the
+efficient path to increasing its knowledge of the world. A more
+generalized version of this idea would take consider when its worth to
+turn on certain types of sensors, e.g., a camera to detect colored
+objects being referenced in dialog. Conversely, the robot should also
+take into account what it believes the other agents know, and use this
+information when generating utterances. In this view, the robot has
+beliefs about the other agents' own uncertainty and can direct dialog
+in a direction to reduce it. One can see that entropy reduction is a
+more general case of common grounding and handling surprise, a both
+processes reduce uncertainty in the belief structure.
+
 \begin{figure}[h]
   \centering
   \begin{subfigure}[t]{0.4\textwidth}
@@ -344,31 +410,28 @@ cmdrX: the red_medkit is not
 \begin{verbatim}
 self:  where is the red_medkit?
 cmdrX: i don't know.
-self:  cmdrY, where is the red_medkit?
+self:  cmdrY, where is the
+       red_medkit?
 cmdrY: areaB.
 self:  okay.
+
+
 \end{verbatim}
     \label{fig:er_text}
     \caption{Dialog}
   \end{subfigure}
-  ~\quad
+  ~\qquad\qquad
   \begin{subfigure}[t]{0.4\textwidth}
     \centering
 \begin{verbatim}
-{{:self {:confidence 0.9}
-        {:at ...}}
- {:objects [:red_medkit 
-            :blu_medkit]}
- {:red_medkit
-   {:at  [:areaA 0.8
-          :areaB 0.1
-          :areaC 0.1]
+{:self {:confidence 0.5}}
+{:red_medkit
+   {:at  {:areaA 0.1
+          :areaB 0.8
+          :areaC 0.1}
     :type :medkit}}
- {:blu_medkit
-   {:at  [:areaA 0.8
-          :areaB 0.1
-          :areaC 0.1]
-    :type :medkit}}}
+{:cmdrX {:confidence 0.6}}
+{:cmdrY {:confidence 0.9}}
 \end{verbatim}
     \label{fig:er_beliefs}
     \caption{Beliefs}
@@ -377,12 +440,19 @@ self:  okay.
   \label{fig:er}
 \end{figure}
 
-
 \subsection{Analysis}
 \label{sec:analysis}
 % Discuss the advantages and possible disadvantages of your algorithm
 % Suggest additional experiments and/or improvements to the solution.
+The advantages over knowledge-based approaches\dots.
 
+The disadvantages over knowledge-based approaches\dots.
+
+The advantages over data-driven approaches\dots.
+
+The disadvantages over data-driven approaches\dots.
+
+These improvements should be made:\dots.
 \section{Conclusion}
 \label{sec:conclusion}
 % Summarize what your solution achieved, and how your algoritm could be
@@ -414,4 +484,5 @@ This paper showed\dots.
 \bibliographystyle{apalike} {\small \bibliography{references}}
 \end{document}
 % LocalWords:  disfluencies disfluency incrementality  cmdrY
-% LocalWords:  cmdrX situatedness underspecified
+% LocalWords:  cmdrX situatedness underspecified probabilistically
+%  LocalWords:  disambiguating interactability
