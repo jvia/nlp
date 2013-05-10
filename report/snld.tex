@@ -455,34 +455,48 @@ The advantages over data-driven approaches\dots.
 
 The disadvantages over data-driven approaches\dots.
 
-These improvements should be made:\dots.
+As this software is a prototype, there are a number of improvements to
+be made.
 \section{Conclusion}
 \label{sec:conclusion}
 % Summarize what your solution achieved, and how your algorithm could
 % be extended or used in other tasks Briefly discuss directions for
 % future work.
+
+Using situated contexts and probabilistic frameworks for managing
+dialogue and action is an area with further room for growth.
 Utilizing more types of probabilistic distributions would allow for
-more robust inference processes. In this study, only a Bernoulii
+more robust inference processes. In this study, only the Bernoulii
 distribution and the more general Categorical distribution were
 used. This is quite limiting when reasoning about objects in space,
 e.g., the location of a given medical kit. A better approach would be
 to use continuous distributions, perhaps backed by a particle filter.
-Another direction would be to direct dialog to increase common
-ground between all agents in the environment. For example, during the
-dialog, after the robotic agent first received the location of the
-red medical kit from cmdrX, it could have tried to create common
-ground with cmdrY, creating an immediate contradiction between the
-beliefs of cmdrX and cmdrY. Dialog could then pursue a resolution to
-this dialog. A final improvement could be performed during the
-grounding of ambiguous referents. In this example, the robot simply
-chooses a feature with separate values to attempt to disambiguate the
-potential referents. A more natural approach would be to choose the
-most salient features of the objects for comparison. This would
-require having beliefs about objects and their salient features, but
-it is a natural fit for this kind of belief framework.
+Another direction would be to direct dialog to increase common ground
+between all agents in the environment. For example, during the dialog,
+after the robotic agent first received the location of the red medical
+kit from cmdrX, it could have tried to create common ground with
+cmdrY, creating an immediate contradiction between the beliefs of
+cmdrX and cmdrY. Dialog could then pursue a resolution to this
+dialog. A final improvement could be performed during the grounding of
+ambiguous referents. In this example, the robot simply chooses a
+feature with separate values to attempt to disambiguate the potential
+referents. A more natural approach would be to choose the most salient
+features of the objects for comparison. This would require having
+beliefs about objects and their salient features, but it is a natural
+fit for this kind of belief framework.
 
-This paper showed\dots.
-\bibliographystyle{apalike} {\small \bibliography{references}}
+This paper gave an overview on how the usage of situatedness and
+probabilistic belief representations can enhance task
+performance. Probabilistic representations are a flexible approach to
+fuse information from multiple sources into a coherent set of
+beliefs. By mixing sensor information with statements from an
+interlocutor and beliefs about itself and its interlocutors, a robot
+can choose actions which are most likely to accomplish its goals. By
+more quickly resolving ambiguity or focusing on sources most likely to
+contain needed knowledge, a robot can act more naturally with its
+interlocutors as it attempts to complete its goals.
+
+\bibliographystyle{apalike}{\small \bibliography{references}}
 \end{document}
 % LocalWords:  disfluencies disfluency incrementality  cmdrY
 % LocalWords:  cmdrX situatedness underspecified probabilistically
