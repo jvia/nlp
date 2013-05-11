@@ -145,14 +145,16 @@ hybridizing these approaches which has shown promise.
 % parts of the NL chain work better (this is critical and should be the
 % highlight of the paper)
 To handle the challenges previously outlined, an introspective
-framework utilizing probabilistic beliefs was developed. Central to
-this idea was a constantly changing set of beliefs. The goal of the
-agent was to minimize the entropy of its beliefs with respect to the
-task. This belief structure was used to augment a simple, rule-based
-dialog manager, allowing it reach conclusions otherwise not
-possible. The algorithm ran in a reactive manner to new utterances,
-using each utterance to update its set of beliefs and then using this
-new belief set and the utterance to generate an appropriate
+framework utilizing probabilistic beliefs was developed. This
+framework made use of ADE \cite{Kramer2007} as a cognitive
+architecture sitting on top of the ROS middleware \cite{Quigley2009}.
+Central to this idea was a constantly changing set of beliefs. The
+goal of the agent was to minimize the entropy of its beliefs with
+respect to the task. This belief structure was used to augment a
+simple, rule-based dialog manager, allowing it reach conclusions
+otherwise not possible. The algorithm ran in a reactive manner to new
+utterances, using each utterance to update its set of beliefs and then
+using this new belief set and the utterance to generate an appropriate
 action. The action type was varied, ranging from basic motion
 commands, to navigation commands, to dialog acts. The two key
 algorithms were \texttt{update} and \texttt{act}.
@@ -447,16 +449,39 @@ self:  okay.
 \label{sec:analysis}
 % Discuss the advantages and possible disadvantages of your algorithm
 % Suggest additional experiments and/or improvements to the solution.
-The advantages over knowledge-based approaches\dots.
+As with any design choice, there are a number of trade-offs. The
+initial advantage lies in the ability to make use of and have beliefs
+about a given situation.  Compared to knowledge-based approaches,
+there is more flexibility but with a loss of predictability. By having
+a probabilistic take on the properties pattern \cite{Fowler}, the
+belief structure is at any point extensible and modifiable. This is
+great freedom and especially use for any agent remaining in a situated
+environment over an extended duration.  There is a downside with an
+endlessly extensible belief structure. Because the beliefs can change
+in ways not predicted at design, optimal actions from the robot's
+perspective differ from human expectation.
 
-The disadvantages over knowledge-based approaches\dots.
+Data-driven approaches share the use of a probabilistic
+representation, making them good candidates for embodied
+contexts. They also have the advantage that they are single algorithms
+whose behavior, in the case of the POMDP for example, are completely
+determined by generating a policy from training data. The downside is
+that this training is done offline, and modifying the policy online as
+context changes is an unsolved problem. This may be a fine limitation
+for certain tasks, but other tasks may require a robot to be deployed
+for an extended duration. In this case, being able to incorporate new
+experiences is important and this is where a probabilistic belief
+framework excels.
 
-The advantages over data-driven approaches\dots.
+Beyond the main challenges of the property pattern, there is the
+additional burden of how to perform automatic inference across these
+belief structures. As it stands now, beliefs are updated manually,
+with the programmer determining which beliefs, if they exist, are most
+relevant to updating another belief. This is both tedious and error
+prone, so finding a way to automate it would greatly enhance the
+abilities of the agent and free the programmer from exhaustive
+specification.
 
-The disadvantages over data-driven approaches\dots.
-
-As this software is a prototype, there are a number of improvements to
-be made.
 \section{Conclusion}
 \label{sec:conclusion}
 % Summarize what your solution achieved, and how your algorithm could
