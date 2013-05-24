@@ -20,78 +20,79 @@
 \setlength{\textwidth}{6.5 in}
 \setlength{\textheight}{9 in}
 
-\title{Introspection Guided Dialog-Based Task Resolution}
+\title{A Probabilistic Belief Framework for Situated Dialogue Management}
 \author{Jeremiah Via}
+\date{}
 
 \begin{document}
 \maketitle
 \begin{abstract}
   Situated task-based dialog poses many challenges for traditional
-  natural language understanding techniques. Key among these are
-  ambiguous reference resolution, incomplete utterances, task-specific
-  utterances. This paper presents a probabilistic belief framework for
-  dealing with these challenges. By representing beliefs about the
-  world, the agent's own capabilities, and the capabilities of other
-  agents in the environment, a dialog manager can choose actions
-  which have the highest likelihood of increasing common ground. A
-  probabilistic approach has the additional benefit of remaining
-  robust to contradictions, allowing the dialog manager to simply
-  update its probabilities.
+  natural language understanding techniques. Key among these
+  challenges are ambiguous referents, incomplete utterances, and
+  task-specific utterances. This paper presents a probabilistic belief
+  framework for dealing with these challenges. By representing beliefs
+  about the world, the agent's own capabilities, and the capabilities
+  of other agents in the environment, a dialog manager can choose
+  actions which have the highest likelihood of increasing common
+  ground. A probabilistic approach has the additional benefit of
+  remaining robust to contradictions, allowing the dialog manager to
+  simply update its beliefs.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 In situated contexts, natural language takes on a different set of
 characteristics than it does in the form in which it is typically
-studied---namely prose. This makes much research not fully-applicable
-to situated contexts, where natural language understanding software
-must deal with various types of disfluency, common-ground alignment,
-and response-time requirements \cite{Scheutz2011:dialogue}. For this
-particular project, the problem of ambiguous referents, ungrammatical
-sentences, and incrementality were studied. A probabilistic belief
-framework was designed to exploit situatedness to better handle these
-challenges.
+studied. This makes much research not fully-applicable to situated
+contexts, where natural language understanding software must deal with
+disfluency, common-ground alignment, and response-time requirements
+\cite{Scheutz2011:dialogue}. For this particular project, the problem
+of ambiguous referents, ungrammatical sentences, and incrementality
+were studied. A probabilistic belief framework was designed to exploit
+situatedness to better handle these challenges.
 
 During natural dialog, ambiguous referents are almost certain to
 appear. This occurs because humans make a number of hidden assumptions
-when conversing. For example, person A might ask person B to hand them
-``the mug'' from a table with multiple mugs, with the hidden
-assumption that ``the mug'' refers to the one closest to person
-B. These kind of underspecified referents need to be handled by a
-natural language understanding system. Using situatedness in this case
-yields a clear benefit. In the example with the mug, one could include
-in their model that ambiguous referents are likely to be grounded to
-the specific instance closest to the speaker or listener.
+when conversing. For example, person \textit{A} might ask person
+\textit{B} to hand them ``the mug'' from a table with multiple mugs,
+with the hidden assumption that ``the mug'' refers to the one closest
+to person \textit{B}. These kind of underspecified referents need to
+be handled by a natural language understanding system. Using
+situatedness in this case yields a clear benefit. In the example with
+the mug, one could include in their model that ambiguous referents are
+likely to be grounded to the specific instance closest to the speaker
+or listener.
 
 Human dialog, unlike prose, is full of ungrammatical
 sentences. Examples include answers in response to questions or
 exclamations. Dealing with these types of sentences requires
-maintaining one's own context and the model of the other agent's
+maintaining one's own context and a model of the other agent's
 context. In other words, when an agent makes a partial statement, what
-is the context in which this agent is most likely operating. 
+is the context in which this agent is most likely operating.
 
 Incrementality is a natural part of speech. Rarely is a task between
-two human laid out in full detail in one statement. Typically, the
-meaning of a task is negotiated between two humans, with a
-back-and-forth dialog. This process ensures common ground between
-the agents. To function successfully with humans, a robot must be able
-to have partial task representations which are refined through
-dialog until enough information is present to complete the task.
+two humans fully-specified in one statement. Typically, the meaning of
+a task is negotiated between two humans, with a back-and-forth
+dialog. This process ensures common ground between the agents. To
+function successfully with humans, a robot must be able to have
+partial task representations which are refined through dialog until
+enough information is present to complete the task.
 
 The rest of the paper is organized as follows. Section
 \ref{sec:scenario} introduces the scenario used for this
 project. Particular attention will be paid to the real-world aspects
-of the domain that make traditional natural language
-understanding. This scenario will motivate the necessity of exploiting
-the embodied nature of the robot and its situatedness for improved
-performance in this kind of environment. Section \ref{sec:framework}
-will describe the approach used with respect to the problem domain. A
-belief manager using a probabilistic belief representation is proposed
-to best make use of situatedness for directing dialog and physical
-action with respect to the task.  Particular difficulties of
-task-based dialog will be used as examples against the idea to show
-how performance improves. In section \ref{sec:analysis} an analysis of
-the approach will be made.
+of the domain that challenges traditional natural language
+understanding. This scenario motivates the necessity of exploiting the
+embodied nature of the robot and its operational-context for improved
+performance. Section \ref{sec:framework} will describe the approach
+used with respect to the problem domain. A belief framework using a
+probabilistic representation is proposed to best make use of
+situatedness for directing dialog and physical action with respect to
+the task. In section \ref{sec:case_studies} an analysis of the
+approach will be made. Particular difficulties of task-based dialog
+will be used as examples against the idea to show how performance
+improves.
 
 \section{Scenario}
 \label{sec:scenario}
@@ -108,16 +109,16 @@ physical action, underspecified instructions, and belief revision.
 
 % make reference to all the sources you used and inform the reader
 % about possible strategies for developing algorithms for the task
-The robot has beliefs about the usual location of these kinds of
+The robot has beliefs about the usual location of different kinds of
 medical kits, but when reality fails to meet expectations, it must
 gather information from two interlocutors participating in the
 task. Neither interlocutor has full knowledge of the task and so the
 robot must direct the conversation such that it can maximize its
 knowledge related to the task.
 
-There are two main approaches to handling dialog
+There are two general approaches to handling dialog
 management---knowledge-based approaches and data-driven approaches.
-Knowledge-based approaches typically used a set of hard-coded rules
+Knowledge-based approaches typically use a set of hard-coded rules
 represented by a finite state automaton
 \cite{Lee2010:dialog-management}. These are useful in
 highly-structured tasks with a restricted vocabulary. While the
@@ -126,16 +127,17 @@ for efficiency and human-understandability, they are a suboptimal
 choice for situated, natural dialog because of the inability to handle
 unknown utterances or unexpected dialog flow. Data-driven approaches
 utilize sets of annotated corpora to train reinforcement learning
-algorithms, e.g., partially observable Markov decision processes
-\cite{Young2013:dialog-pomdp}. While training and annotation are time
-consuming, the algorithm is easily applied to new data sets making an
-algorithm more widely applicable. General challenges with these
-approaches is hand-turning them post-training to better fit the
-dialog. There is also the challenge that the learned model does not
-change over time. This is particularly troubling in a situated
+algorithms, e.g., a Partially Observable Markov Decision Process
+(POMDP) \cite{Young2013:dialog-pomdp}. While training and annotation
+are time consuming, the algorithm is easily applied to new data sets
+making it widely applicable without modification. General challenges
+with these approaches is hand-tuning them post-training to better fit
+the dialog. There is also the challenge that the learned model does
+not change over time. This is particularly limiting in a situated
 context, where unexpected information about a task can appear at any
 time, making a more flexible approach desirable. There is work on
-hybridizing these approaches which has shown promise.
+hybridizing these approaches which has shown promise
+\cite{Lee2010:robust_dialog}.
 
 \section{An Introspective Belief Framework}
 \label{sec:framework}
@@ -146,9 +148,9 @@ hybridizing these approaches which has shown promise.
 % highlight of the paper)
 To handle the challenges previously outlined, an introspective
 framework utilizing probabilistic beliefs was developed. This
-framework made use of ADE \cite{Kramer2007} as a cognitive
+framework made use of ADE \cite{Andronache2004:ade} as a cognitive
 architecture sitting on top of the ROS middleware \cite{Quigley2009}.
-Central to this idea was a constantly changing set of beliefs. The
+Central to this framework is a constantly updating set of beliefs. The
 goal of the agent was to minimize the entropy of its beliefs with
 respect to the task. This belief structure was used to augment a
 simple, rule-based dialog manager, allowing it reach conclusions
@@ -193,26 +195,24 @@ algorithms were \texttt{update} and \texttt{act}.
   \label{algo:update}
 \end{algorithm}
 
-The \texttt{update} algorithm (algorithm \ref{algo:update}) takes
-as input a new speaker utterance and updates its beliefs about the
-task, its interlocutors, the world, or itself. The manner of this
-update is dependent on the type of utterance. For example,
-instructions are placed as goals in the belief structure, with
-sub-goals being added as necessary. Sub-goals are created to ground
-ambiguous referents in an utterance. Clarifying statements are used to
-change belief probabilities about, e.g., to which ground referent an
-ambiguous referent refers or the locations of an object in the
-environment. An exclaiming utterance is a particularly challenging
-type of utterance. If the robot is performing an utterance and its
+The \texttt{update} algorithm (algorithm \ref{algo:update}) takes as
+input a new speaker utterance and updates its beliefs about the task,
+its interlocutors, the world, or itself. The manner of this update is
+dependent on the type of utterance. For example, instructions are
+placed as goals in the belief structure, with sub-goals being added as
+necessary. Sub-goals are created to ground ambiguous referents in an
+utterance. Clarifying statements are used to change belief
+probabilities about, e.g., to which ground referent an ambiguous
+referent refers or the locations of an object in the environment. An
+exclaiming utterance is a particularly challenging type of
+utterance. If the robot is performing an utterance and its
 interlocutor exclaims, the robot must figure out what is wrong with
-respect to the environment and its actions. Doing this in a general
-way would be an interesting area of further research. For this study,
-the safest maneuver determined was to stop the current action and wait
-further instruction. When asked a question, the robot must search its
-belief structure to find the most likely answer. For example, if asked
-``What are you doing?'', the robot must look at its current
-action. Failing to find any reasonable answer, the robot may answer
-``I don't know.''
+respect to the environment and its actions. For this study, the safest
+maneuver determined was to stop the current action and wait further
+instruction. When asked a question, the robot must search its belief
+structure to find the most likely answer. For example, if asked ``What
+are you doing?'', the robot must look at its current action. Failing
+to find any reasonable answer, the robot may answer ``I don't know.''
 
 The \texttt{act} algorithm (algorithm \ref{algo:action}) uses the
 current utterance and newly updated beliefs to choose an action. This
@@ -261,8 +261,12 @@ and other sensor data allows a robotic agent to better perform
 task-based dialogue. With a high-level understanding of these two core
 algorithms, we now give example traces through small dialog acts. The
 intent is to show how these algorithms use situatedness to handle the
-challenges shown previously in section \ref{sec:intro}.
+challenges discussed previously in section \ref{sec:intro}. The
+following figures all contain small snippets of dialogue and a
+relevant subset of the belief structure.
 
+\section{Case Studies}
+\label{sec:case_studies}
 \subsection{Common Ground}
 For task-based dialog, it is critical that all agents involved refer
 to the same objects in the environment when using a shared
@@ -319,8 +323,8 @@ candidate objects and create a disambiguating phrase based on the most
 salient feature of each object. With this the ability, the agent could
 ask ``The red medkit on the table or the large medkit down the hall?''
 This sort of meaning negotiation is important to task-based dialog,
-and without situatedness the negotiation process would either take a
-long time or be impossible.
+and without situatedness the negotiation process would take a long
+time or even be impossible.
 
 \subsection{Surprise}
 \begin{figure}[h]
@@ -352,8 +356,8 @@ cmdrX: the red_medkit is not
         :areaC 0.33}}
   {:type {:medkit 1.0}}}
 {:referents
-  {:medkit [:red_medkit 0.9 
-            :blu_medkit 0.1]}}
+  {:medkit {:red_medkit 0.9 
+            :blu_medkit 0.1}}}
 \end{verbatim}
     \label{fig:surprise_beliefs}
     \caption{Beliefs}
@@ -378,8 +382,8 @@ could end up moving more slowly through the environment if it was
 unsure of its actions. Our use of these values were more simplistic
 and use simply to determine whether or not to continue action
 execution, but one can see how a more general version could
-effectively used situatedness to confer more natural interactability
-to a robot.
+effectively use situatedness to confer more natural interactability to
+a robot.
 
 \subsection{Entropy Reduction}
 
@@ -393,9 +397,9 @@ robot updates its confidence of \textit{cmdrX} and asks the new most
 capable agent. In this case, that is \textit{cmdrY}. The robot chooses
 this action because it believes that asking \textit{cmdrY} will give
 it the most information with respect to the medical kit location. In
-other instances, the robot may believe that exploration is the
-efficient path to increasing its knowledge of the world. A more
-generalized version of this idea would take consider when its worth to
+other instances, the robot may believe that exploration is the most
+efficient means to increase its knowledge of the world. A more
+generalized version of this idea would consider when its worthwhile to
 turn on certain types of sensors, e.g., a camera to detect colored
 objects being referenced in dialog. Conversely, the robot should also
 take into account what it believes the other agents know, and use this
@@ -440,7 +444,7 @@ self:  okay.
   \end{subfigure}
   \caption{In this dialog snippet, the robotic agent, upon learning
     that \textit{cmdrX} does not know where the red medical kit is
-    located, updates its beliefs and proceeds to ask the agent it now
+    located, updates its beliefs and proceeds to ask \textit{cmdrY}---the agent it now
     beliefs is most likely to know.}
   \label{fig:er}
 \end{figure}
@@ -453,13 +457,14 @@ As with any design choice, there are a number of trade-offs. The
 initial advantage lies in the ability to make use of and have beliefs
 about a given situation.  Compared to knowledge-based approaches,
 there is more flexibility but with a loss of predictability. By having
-a probabilistic take on the properties pattern \cite{Fowler}, the
-belief structure is at any point extensible and modifiable. This is
-great freedom and especially use for any agent remaining in a situated
-environment over an extended duration.  There is a downside with an
-endlessly extensible belief structure. Because the beliefs can change
-in ways not predicted at design, optimal actions from the robot's
-perspective differ from human expectation.
+a probabilistic take on the properties pattern
+\cite{Fowler1997:properties}, the belief structure is at any point
+extensible and modifiable. This is a great freedom and especially
+useful for any agent remaining in a situated environment over an
+extended duration.  There is a downside with an endlessly extensible
+belief structure. Because the beliefs can change in ways not predicted
+at design, optimal actions from the robot's perspective differ from
+human expectation.
 
 Data-driven approaches share the use of a probabilistic
 representation, making them good candidates for embodied
@@ -468,10 +473,10 @@ whose behavior, in the case of the POMDP for example, are completely
 determined by generating a policy from training data. The downside is
 that this training is done offline, and modifying the policy online as
 context changes is an unsolved problem. This may be a fine limitation
-for certain tasks, but other tasks may require a robot to be deployed
-for an extended duration. In this case, being able to incorporate new
-experiences is important and this is where a probabilistic belief
-framework excels.
+for certain tasks, but other tasks require a robot to be deployed for
+an extended duration, necessitating extensibility . In this case,
+being able to incorporate new experiences is important and this is
+where a probabilistic belief framework excels.
 
 Beyond the main challenges of the property pattern, there is the
 additional burden of how to perform automatic inference across these
@@ -488,8 +493,8 @@ specification.
 % be extended or used in other tasks Briefly discuss directions for
 % future work.
 
-Using situated contexts and probabilistic frameworks for managing
-dialogue and action is an area with further room for growth.
+Using a probabilistic framework to exploit situated contexts when
+managing dialogue and action is an area with further room for growth.
 Utilizing more types of probabilistic distributions would allow for
 more robust inference processes. In this study, only the Bernoulii
 distribution and the more general Categorical distribution were
@@ -499,9 +504,9 @@ to use continuous distributions, perhaps backed by a particle filter.
 Another direction would be to direct dialog to increase common ground
 between all agents in the environment. For example, during the dialog,
 after the robotic agent first received the location of the red medical
-kit from cmdrX, it could have tried to create common ground with
-cmdrY, creating an immediate contradiction between the beliefs of
-cmdrX and cmdrY. Dialog could then pursue a resolution to this
+kit from \textit{cmdrX}, it could have tried to create common ground with
+\textit{cmdrY}, creating an immediate contradiction between the beliefs of
+\textit{cmdrX} and \textit{cmdrY}. Dialog could then pursue a resolution to this
 dialog. A final improvement could be performed during the grounding of
 ambiguous referents. In this example, the robot simply chooses a
 feature with separate values to attempt to disambiguate the potential
@@ -523,6 +528,6 @@ interlocutors as it attempts to complete its goals.
 
 \bibliographystyle{apalike}{\small \bibliography{references}}
 \end{document}
-% LocalWords:  disfluencies disfluency incrementality  cmdrY
+% LocalWords:  disfluencies disfluency incrementality  cmdrY POMDP
 % LocalWords:  cmdrX situatedness underspecified probabilistically
-%  LocalWords:  disambiguating interactability
+%  LocalWords:  disambiguating interactability extensibility
